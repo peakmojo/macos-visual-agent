@@ -41,8 +41,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupOverlayWindow() {
         let contentView = ContentView()
         
-        overlayWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
+        overlayWindow = CustomWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 560),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -56,6 +56,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         overlayWindow?.acceptsMouseMovedEvents = true
         overlayWindow?.collectionBehavior = [.canJoinAllSpaces]
         overlayWindow?.isMovableByWindowBackground = true
+        
+        // Add rounded corners to the window
+        overlayWindow?.contentView?.wantsLayer = true
+        overlayWindow?.contentView?.layer?.cornerRadius = 16
+        overlayWindow?.contentView?.layer?.masksToBounds = true
         
         // Position window in top-right corner
         if let screen = NSScreen.main {
@@ -71,22 +76,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupStatusBar() {
         print("Setting up status bar...")
-        statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        // Use variable length to accommodate the custom view
+        statusBarItem = NSStatusBar.system.statusItem(withLength: 300)
         
         if let button = statusBarItem?.button {
-            // Try using an SF Symbol instead of emoji
-            if let image = NSImage(systemSymbolName: "person.2.fill", accessibilityDescription: "WorkBuddy") {
-                button.image = image
-                print("Status bar button created with SF Symbol")
-            } else {
-                button.title = "WB"
-                print("Status bar button created with text fallback: WB")
-            }
+            // Create custom status bar view
+            let statusBarView = StatusBarView()
+            let hostingView = NSHostingView(rootView: statusBarView)
+            hostingView.frame = NSRect(x: 0, y: 0, width: 300, height: 44)
+            
+            // Remove the default button appearance
+            button.image = nil
+            button.title = ""
+            button.wantsLayer = true
+            button.layer?.backgroundColor = NSColor.clear.cgColor
+            
+            // Add the SwiftUI view as a subview
+            button.addSubview(hostingView)
+            hostingView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                hostingView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+                hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                hostingView.widthAnchor.constraint(equalToConstant: 300),
+                hostingView.heightAnchor.constraint(equalToConstant: 44)
+            ])
+            
+            print("Custom status bar view created")
         } else {
             print("Failed to create status bar button")
         }
         
-        // Create status bar menu
+        // Create status bar menu (for right-click)
         let menu = NSMenu()
         
         let showHideItem = NSMenuItem(title: "Show/Hide WorkBuddy", action: #selector(toggleOverlay), keyEquivalent: "")
@@ -115,5 +135,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+}
+
+class CustomWindow: NSWindow {
+    override var canBecomeKey: Bool {
+        return true
+    }
+    
+    override var canBecomeMain: Bool {
+        return true
     }
 }

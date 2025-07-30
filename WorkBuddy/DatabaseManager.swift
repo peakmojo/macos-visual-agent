@@ -27,6 +27,7 @@ class DatabaseManager: ObservableObject {
         createBuddiesTable()
         createScreenshotsTable()
         createActivityTable()
+        migrateBuddiesTable()
     }
     
     private func createBuddiesTable() {
@@ -80,6 +81,35 @@ class DatabaseManager: ObservableObject {
             print("Activity table created.")
         } else {
             print("Activity table could not be created.")
+        }
+    }
+    
+    private func migrateBuddiesTable() {
+        // Check if ProfileImage column exists, if not add it
+        let checkColumnSQL = "PRAGMA table_info(Buddies)"
+        var statement: OpaquePointer?
+        var hasProfileImageColumn = false
+        
+        if sqlite3_prepare_v2(db, checkColumnSQL, -1, &statement, nil) == SQLITE_OK {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if let columnName = sqlite3_column_text(statement, 1) {
+                    let name = String(cString: columnName)
+                    if name == "ProfileImage" {
+                        hasProfileImageColumn = true
+                        break
+                    }
+                }
+            }
+        }
+        sqlite3_finalize(statement)
+        
+        if !hasProfileImageColumn {
+            let addColumnSQL = "ALTER TABLE Buddies ADD COLUMN ProfileImage TEXT"
+            if sqlite3_exec(db, addColumnSQL, nil, nil, nil) == SQLITE_OK {
+                print("ProfileImage column added to Buddies table.")
+            } else {
+                print("Could not add ProfileImage column.")
+            }
         }
     }
     

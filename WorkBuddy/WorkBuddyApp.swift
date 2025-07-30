@@ -42,7 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = ContentView()
         
         overlayWindow = CustomWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 450),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false

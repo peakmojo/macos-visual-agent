@@ -22,11 +22,7 @@ struct ContentView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.black.opacity(0.3))
-                )
+                .fill(Color(red: 0.85, green: 0.85, blue: 0.87))
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
@@ -42,11 +38,11 @@ struct ContentView: View {
             // Eye icon with watching count
             HStack(spacing: 4) {
                 Image(systemName: "eye.fill")
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .font(.system(size: 12))
                 let watchingCount = buddies.filter { $0.status == .watching }.count
                 Text("\(watchingCount) watching")
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .font(.system(size: 12, weight: .medium))
             }
             
@@ -57,7 +53,7 @@ struct ContentView: View {
                 ForEach(buddies.filter { $0.status == .watching }.prefix(2), id: \.id) { buddy in
                     ZStack {
                         Circle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.white.opacity(0.8))
                             .frame(width: 24, height: 24)
                         
                         if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
@@ -70,12 +66,12 @@ struct ContentView: View {
                             } placeholder: {
                                 Text(buddy.avatar)
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.black.opacity(0.8))
                             }
                         } else {
                             Text(buddy.avatar)
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.black.opacity(0.8))
                         }
                     }
                     .overlay(
@@ -92,10 +88,10 @@ struct ContentView: View {
             // Timer (using screen monitor time or session time)
             HStack(spacing: 4) {
                 Image(systemName: "clock.fill")
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .font(.system(size: 12))
                 Text(formatSessionTime())
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .font(.system(size: 12, weight: .medium))
                     .monospacedDigit()
             }
@@ -106,21 +102,21 @@ struct ContentView: View {
             HStack(spacing: 8) {
                 Button(action: { showChat.toggle() }) {
                     Image(systemName: "message.fill")
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.7))
                         .font(.system(size: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {}) {
                     Image(systemName: "chart.bar.fill")
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.7))
                         .font(.system(size: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.down")
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.7))
                         .font(.system(size: 10))
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
@@ -131,10 +127,10 @@ struct ContentView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.black.opacity(0.7))
-                .background(
+                .fill(.ultraThinMaterial)
+                .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(.ultraThinMaterial)
+                        .fill(Color(red: 0.85, green: 0.85, blue: 0.87).opacity(0.8))
                 )
         )
         .frame(height: 44)
@@ -145,40 +141,40 @@ struct ContentView: View {
             // Header with title and productivity badge
             HStack {
                 Text("Work Buddies")
-                    .font(.system(size: 20, weight: .semibold, design: .default))
-                    .foregroundColor(.white)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.black.opacity(0.7))
                 
                 Spacer()
                 
                 // Productivity badge
                 HStack(spacing: 4) {
                     Text("Productivity:")
-                        .font(.system(size: 13, weight: .medium, design: .default))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.black.opacity(0.6))
                     Text("low")
-                        .font(.system(size: 13, weight: .semibold, design: .default))
-                        .foregroundColor(.white)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.black.opacity(0.7))
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(.white.opacity(0.2))
+                        .fill(.white.opacity(0.8))
                 )
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.up")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 10))
+                        .foregroundColor(.black.opacity(0.7))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.bottom, 32)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
             
             // Buddies list using new design
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 ForEach(buddies) { buddy in
                     ModernBuddyRow(
                         buddy: buddy,
@@ -193,24 +189,24 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.top, 4)
+            .padding(.bottom, 12)
             
             // Stats section
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Divider()
-                    .background(.white.opacity(0.2))
+                    .background(.black.opacity(0.2))
                     .padding(.horizontal, 20)
                 
                 HStack(spacing: 0) {
                     // Session time
                     VStack(spacing: 4) {
                         Text("Session")
-                            .font(.system(size: 13, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(formatSessionTime())
-                            .font(.system(size: 15, weight: .semibold, design: .default))
-                            .foregroundColor(.white)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.6))
+                        Text("1098m")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.7))
                             .monospacedDigit()
                     }
                     
@@ -219,11 +215,11 @@ struct ContentView: View {
                     // App time
                     VStack(spacing: 4) {
                         Text("App Time")
-                            .font(.system(size: 13, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(formatSessionTime())
-                            .font(.system(size: 15, weight: .semibold, design: .default))
-                            .foregroundColor(.white)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.6))
+                        Text("1098m")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.7))
                             .monospacedDigit()
                     }
                     
@@ -232,16 +228,16 @@ struct ContentView: View {
                     // Focus indicator
                     VStack(spacing: 4) {
                         Text("Focus")
-                            .font(.system(size: 13, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.6))
                         Image(systemName: "brain.head.profile")
-                            .font(.system(size: 15))
-                            .foregroundColor(.white)
+                            .font(.system(size: 12))
+                            .foregroundColor(.black.opacity(0.7))
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 28)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
             }
             
             // Bottom navigation
@@ -250,53 +246,54 @@ struct ContentView: View {
                 Button(action: { showChat.toggle() }) {
                     HStack(spacing: 6) {
                         Image(systemName: "message.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 12))
                         Text("Chat")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Divider()
-                    .background(.white.opacity(0.2))
+                    .background(.black.opacity(0.2))
                     .frame(height: 20)
                 
                 // Session button
                 Button(action: {}) {
                     HStack(spacing: 6) {
                         Image(systemName: "clock.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 12))
                         Text("Session")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.black.opacity(0.7))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Divider()
-                    .background(.white.opacity(0.2))
+                    .background(.black.opacity(0.2))
                     .frame(height: 20)
                 
                 // Settings button
                 Button(action: {}) {
                     Image(systemName: "gearshape.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.7))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             .background(
                 Rectangle()
-                    .fill(.white.opacity(0.1))
+                    .fill(.black.opacity(0.05))
             )
         }
+        .frame(minHeight: 370)
     }
     
     private func toggleBuddyStatus(_ buddyId: String) {
@@ -362,18 +359,18 @@ struct ModernBuddyRow: View {
             }
             
             // Name and status
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(buddy.name)
-                        .font(.system(size: 17, weight: .semibold, design: .default))
-                        .foregroundColor(.white)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.black.opacity(0.7))
                     Text(getEmojiForBuddy(buddy))
-                        .font(.system(size: 15))
+                        .font(.system(size: 12))
                 }
                 
                 Text(getStatusText(buddy))
-                    .font(.system(size: 15, weight: .regular, design: .default))
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.black.opacity(0.6))
             }
             
             Spacer()
@@ -381,17 +378,17 @@ struct ModernBuddyRow: View {
             // Status icon
             Button(action: onToggleStatus) {
                 Image(systemName: getStatusIcon(buddy))
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.8))
+                    .font(.system(size: 12))
+                    .foregroundColor(.black.opacity(0.6))
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isHovered ? .white.opacity(0.1) : .clear)
+                .fill(isHovered ? .black.opacity(0.05) : .clear)
         )
         .onHover { hovering in
             onHover(hovering)

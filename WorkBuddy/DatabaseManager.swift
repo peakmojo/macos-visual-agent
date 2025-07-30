@@ -85,17 +85,25 @@ class DatabaseManager: ObservableObject {
     }
     
     private func migrateBuddiesTable() {
-        // Check if ProfileImage column exists, if not add it
+        // Check if columns exist, if not add them
         let checkColumnSQL = "PRAGMA table_info(Buddies)"
         var statement: OpaquePointer?
         var hasProfileImageColumn = false
+        var hasEmojiColumn = false
+        var hasBehaviorDescriptionColumn = false
         
         if sqlite3_prepare_v2(db, checkColumnSQL, -1, &statement, nil) == SQLITE_OK {
             while sqlite3_step(statement) == SQLITE_ROW {
                 if let columnName = sqlite3_column_text(statement, 1) {
                     let name = String(cString: columnName)
-                    if name == "ProfileImage" {
+                    switch name {
+                    case "ProfileImage":
                         hasProfileImageColumn = true
+                    case "Emoji":
+                        hasEmojiColumn = true
+                    case "BehaviorDescription":
+                        hasBehaviorDescriptionColumn = true
+                    default:
                         break
                     }
                 }
@@ -111,10 +119,28 @@ class DatabaseManager: ObservableObject {
                 print("Could not add ProfileImage column.")
             }
         }
+        
+        if !hasEmojiColumn {
+            let addColumnSQL = "ALTER TABLE Buddies ADD COLUMN Emoji TEXT"
+            if sqlite3_exec(db, addColumnSQL, nil, nil, nil) == SQLITE_OK {
+                print("Emoji column added to Buddies table.")
+            } else {
+                print("Could not add Emoji column.")
+            }
+        }
+        
+        if !hasBehaviorDescriptionColumn {
+            let addColumnSQL = "ALTER TABLE Buddies ADD COLUMN BehaviorDescription TEXT"
+            if sqlite3_exec(db, addColumnSQL, nil, nil, nil) == SQLITE_OK {
+                print("BehaviorDescription column added to Buddies table.")
+            } else {
+                print("Could not add BehaviorDescription column.")
+            }
+        }
     }
     
     func saveBuddy(_ buddy: Buddy) {
-        let insertSQL = "INSERT OR REPLACE INTO Buddies (Id, Name, Status, Avatar, ProfileImage, IsEnabled, LastActivity) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        let insertSQL = "INSERT OR REPLACE INTO Buddies (Id, Name, Status, Avatar, ProfileImage, Emoji, BehaviorDescription, IsEnabled, LastActivity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         var statement: OpaquePointer?
         
         if sqlite3_prepare_v2(db, insertSQL, -1, &statement, nil) == SQLITE_OK {
@@ -123,8 +149,10 @@ class DatabaseManager: ObservableObject {
             sqlite3_bind_text(statement, 3, String(describing: buddy.status), -1, nil)
             sqlite3_bind_text(statement, 4, buddy.avatar, -1, nil)
             sqlite3_bind_text(statement, 5, buddy.profileImage, -1, nil)
-            sqlite3_bind_int(statement, 6, buddy.status != .disabled ? 1 : 0)
-            sqlite3_bind_text(statement, 7, ISO8601DateFormatter().string(from: Date()), -1, nil)
+            sqlite3_bind_text(statement, 6, buddy.emoji, -1, nil)
+            sqlite3_bind_text(statement, 7, buddy.behaviorDescription, -1, nil)
+            sqlite3_bind_int(statement, 8, buddy.status != .disabled ? 1 : 0)
+            sqlite3_bind_text(statement, 9, ISO8601DateFormatter().string(from: Date()), -1, nil)
             
             if sqlite3_step(statement) == SQLITE_DONE {
                 print("Successfully saved buddy")
@@ -139,7 +167,7 @@ class DatabaseManager: ObservableObject {
     }
     
     func loadBuddies() -> [Buddy] {
-        let querySQL = "SELECT Id, Name, Status, Avatar, ProfileImage, IsEnabled FROM Buddies"
+        let querySQL = "SELECT Id, Name, Status, Avatar, ProfileImage, Emoji, BehaviorDescription, IsEnabled FROM Buddies"
         var statement: OpaquePointer?
         var buddies: [Buddy] = []
         
@@ -151,7 +179,15 @@ class DatabaseManager: ObservableObject {
                 let avatar = String(describing: String(cString: sqlite3_column_text(statement, 3)))
                 let profileImagePointer = sqlite3_column_text(statement, 4)
                 let profileImage = profileImagePointer != nil ? String(cString: profileImagePointer!) : nil
-                let isEnabled = sqlite3_column_int(statement, 5) == 1
+                
+                // Handle new columns with fallback to defaults
+                let emojiPointer = sqlite3_column_text(statement, 5)
+                let emoji = emojiPointer != nil ? String(cString: emojiPointer!) : getDefaultEmoji(for: name)
+                
+                let behaviorDescriptionPointer = sqlite3_column_text(statement, 6)
+                let behaviorDescription = behaviorDescriptionPointer != nil ? String(cString: behaviorDescriptionPointer!) : getDefaultBehaviorDescription(for: name)
+                
+                let isEnabled = sqlite3_column_int(statement, 7) == 1
                 
                 let status: BuddyStatus
                 switch statusString {
@@ -161,7 +197,7 @@ class DatabaseManager: ObservableObject {
                 default: status = isEnabled ? .watching : .disabled
                 }
                 
-                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: profileImage)
+                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: profileImage, emoji: emoji, behaviorDescription: behaviorDescription)
                 buddies.append(buddy)
             }
         } else {
@@ -213,6 +249,24 @@ class DatabaseManager: ObservableObject {
         }
         
         sqlite3_finalize(statement)
+    }
+    
+    private func getDefaultEmoji(for name: String) -> String {
+        switch name.lowercased() {
+        case "alex": return "⭐"
+        case "sarah": return "💋"
+        case "mike": return "😀"
+        default: return "👤"
+        }
+    }
+    
+    private func getDefaultBehaviorDescription(for name: String) -> String {
+        switch name.lowercased() {
+        case "alex": return "Analyzing your code structure"
+        case "sarah": return "Providing async feedback"
+        case "mike": return "Taking a break"
+        default: return "Watching your screen"
+        }
     }
     
     deinit {

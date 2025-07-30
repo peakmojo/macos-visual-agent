@@ -7,26 +7,39 @@ struct ContentView: View {
     @State private var isExpanded = false
     @State private var hoveredBuddy: String? = nil
     @State private var showChat = false
+    @State private var selectedChatBuddy: Buddy? = nil
     @State private var showQuitConfirmation = false
+    @State private var showTaskTimeline = true
+    @State private var activityFeed: [ActivityItem] = []
+    @State private var showTrialReport = false
+    @State private var currentWorkflowStep: WorkflowStep = .taskAssignment
+    @State private var workflowTimer: Timer?
     @State private var buddies = [
-        Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face"),
-        Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil),
-        Buddy(id: "mike", name: "Mike", status: .onBreak, avatar: "M", profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face")
+        Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face", emoji: "⭐", behaviorDescription: "Analyzing your code structure"),
+        Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil, emoji: "💋", behaviorDescription: "Providing async feedback"),
+        Buddy(id: "mike", name: "Mike", status: .onBreak, avatar: "M", profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face", emoji: "😀", behaviorDescription: "Taking a break")
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            if isExpanded {
-                expandedView
-            } else {
-                collapsedView
+        HStack(spacing: 0) {
+            // Left: Task Timeline area (collapsible)
+            if showTaskTimeline {
+                taskTimelineArea
+                    .transition(.move(edge: .leading))
+            }
+            
+            Spacer()
+            
+            // Right: Work Buddies components
+            VStack {
+                if isExpanded {
+                    workBuddiesPanel
+                } else {
+                    miniOverlayBar
+                }
+                Spacer()
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.6))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
         .animation(.easeInOut(duration: 0.15), value: hoveredBuddy)
         .alert("Quit WorkBuddy", isPresented: $showQuitConfirmation) {
@@ -39,13 +52,35 @@ struct ContentView: View {
         }
         .onAppear {
             // Hardcoded - no database
+            loadSampleActivityFeed()
+            startJobSimulationWorkflow()
         }
+        .overlay(
+            // Founder Chat Module overlay
+            Group {
+                if showChat, let selectedBuddy = selectedChatBuddy {
+                    FounderChatView(
+                        buddy: selectedBuddy,
+                        isPresented: $showChat
+                    )
+                }
+            }
+        )
+        .overlay(
+            // Trial Report overlay
+            Group {
+                if showTrialReport {
+                    TrialReportView(isPresented: $showTrialReport)
+                }
+            }
+        )
     }
     
     
-    var collapsedView: some View {
-        HStack(spacing: 8) {
-            // Eye icon with watching count
+    // Top Mini Overlay Bar - 320px width, 48px height, floating top-right
+    var miniOverlayBar: some View {
+        HStack(spacing: 12) {
+            // Left: 👁 watching count
             HStack(spacing: 4) {
                 Image(systemName: "eye.fill")
                     .foregroundColor(.black.opacity(0.7))
@@ -56,73 +91,61 @@ struct ContentView: View {
                     .font(.system(size: 12, weight: .medium))
             }
             
-            Spacer()
-            
-            // User avatars
-            HStack(spacing: -8) {
+            // Center: Founder avatar stacking (Alex, Sarah) + status dots
+            HStack(spacing: -6) {
                 ForEach(buddies.filter { $0.status == .watching }.prefix(2), id: \.id) { buddy in
                     ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.6))
-                            .frame(width: 24, height: 24)
-                        
                         if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
                             AsyncImage(url: url) { image in
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
-                                    .frame(width: 24, height: 24)
+                                    .frame(width: 28, height: 28)
                                     .clipShape(Circle())
                             } placeholder: {
-                                Text(buddy.avatar)
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.black.opacity(0.8))
+                                Circle()
+                                    .fill(Color.white.opacity(0.8))
+                                    .frame(width: 28, height: 28)
+                                    .overlay(
+                                        Text(buddy.avatar)
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(.black.opacity(0.8))
+                                    )
                             }
                         } else {
-                            Text(buddy.avatar)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.black.opacity(0.8))
+                            Circle()
+                                .fill(Color.white.opacity(0.8))
+                                .frame(width: 28, height: 28)
+                                .overlay(
+                                    Text(buddy.avatar)
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                )
                         }
                     }
                     .overlay(
                         Circle()
-                            .fill(buddy.status == .watching ? Color.green : Color.orange)
+                            .fill(getStatusColor(buddy))
                             .frame(width: 8, height: 8)
-                            .offset(x: 8, y: 8)
+                            .offset(x: 10, y: 10)
                     )
+                    .onTapGesture {
+                        isExpanded.toggle()
+                    }
                 }
             }
             
-            Spacer()
-            
-            // Timer (using screen monitor time or session time)
-            HStack(spacing: 4) {
-                Image(systemName: "clock.fill")
-                    .foregroundColor(.black.opacity(0.7))
-                    .font(.system(size: 12))
-                Text(formatSessionTime())
-                    .foregroundColor(.black.opacity(0.7))
-                    .font(.system(size: 12, weight: .medium))
-                    .monospacedDigit()
-            }
-            
-            Spacer()
-            
-            // Action icons
-            HStack(spacing: 8) {
-                Button(action: { showChat.toggle() }) {
-                    Image(systemName: "message.fill")
+            // Right: ⏱ 29m + expand button
+            HStack(spacing: 6) {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
                         .foregroundColor(.black.opacity(0.7))
                         .font(.system(size: 12))
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Button(action: {}) {
-                    Image(systemName: "chart.bar.fill")
+                    Text(formatSessionTime())
                         .foregroundColor(.black.opacity(0.7))
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, weight: .medium))
+                        .monospacedDigit()
                 }
-                .buttonStyle(PlainButtonStyle())
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.down")
@@ -134,49 +157,68 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.5))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white.opacity(0.9))
+                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
-        .frame(height: 44)
+        .frame(width: 320, height: 48)
     }
     
-    var expandedView: some View {
+    // Work Buddies Panel - 400px width, half screen height, right-side slide out
+    var workBuddiesPanel: some View {
         VStack(spacing: 0) {
-            // Header with title and productivity badge
+            // Header with title and productivity status
             HStack {
-                Text("Work Buddies")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.black.opacity(0.7))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Work Buddies")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black.opacity(0.8))
+                    HStack(spacing: 6) {
+                        Text("Job Simulation")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.black.opacity(0.5))
+                        Text("•")
+                            .font(.system(size: 8))
+                            .foregroundColor(.black.opacity(0.3))
+                        Text(currentWorkflowStep.displayName)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.blue)
+                    }
+                }
                 
                 Spacer()
                 
-                // Productivity badge
+                // Productivity status badge
                 HStack(spacing: 4) {
                     Text("Productivity:")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.black.opacity(0.6))
-                    Text("low")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.black.opacity(0.7))
+                    Text("Moderate")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.orange)
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(.white.opacity(0.8))
+                        .fill(.white.opacity(0.9))
+                        .overlay(
+                            Capsule()
+                                .stroke(.black.opacity(0.1), lineWidth: 1)
+                        )
                 )
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.up")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                         .foregroundColor(.black.opacity(0.7))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.top, 20)
             .padding(.bottom, 16)
             
             // Buddies list using new design
@@ -190,6 +232,10 @@ struct ContentView: View {
                         },
                         onToggleStatus: {
                             toggleBuddyStatus(buddy.id)
+                        },
+                        onTap: {
+                            selectedChatBuddy = buddy
+                            showChat = true
                         }
                     )
                 }
@@ -266,12 +312,12 @@ struct ContentView: View {
                     .background(.black.opacity(0.2))
                     .frame(height: 20)
                 
-                // Session button
-                Button(action: {}) {
+                // Report button
+                Button(action: { showTrialReport = true }) {
                     HStack(spacing: 6) {
-                        Image(systemName: "clock.fill")
+                        Image(systemName: "chart.bar.doc.horizontal.fill")
                             .font(.system(size: 12))
-                        Text("Session")
+                        Text("Report")
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundColor(.black.opacity(0.7))
@@ -284,13 +330,17 @@ struct ContentView: View {
                     .background(.black.opacity(0.2))
                     .frame(height: 20)
                 
-                // Settings button
+                // Session button
                 Button(action: {}) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.black.opacity(0.7))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 12))
+                        Text("Session")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundColor(.black.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
@@ -315,7 +365,128 @@ struct ContentView: View {
                     .fill(.black.opacity(0.05))
             )
         }
-        .frame(minHeight: 370)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: .black.opacity(0.15), radius: 20, x: -5, y: 5)
+        )
+        .frame(width: 400)
+        .frame(maxHeight: NSScreen.main?.frame.height ?? 800)
+        .frame(minHeight: 500)
+    }
+    
+    // Task Timeline Area - left-side, collapsible
+    var taskTimelineArea: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Task Timeline")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black.opacity(0.8))
+                    Text("Active Tasks")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.black.opacity(0.5))
+                }
+                
+                Spacer()
+                
+                Button(action: { 
+                    withAnimation {
+                        showTaskTimeline.toggle()
+                    }
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.6))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+            
+            // Task cards
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Tasks section
+                    VStack(spacing: 12) {
+                        ForEach(sampleTasks) { task in
+                            TaskCard(task: task)
+                        }
+                    }
+                    
+                    // Desktop Feed section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            HStack(spacing: 4) {
+                                Image(systemName: "desktopcomputer")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.black.opacity(0.6))
+                                Text("Desktop Activity")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.black.opacity(0.8))
+                            }
+                            Spacer()
+                            Text("Live")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(.green)
+                                )
+                        }
+                        
+                        DesktopFeedView(activityFeed: activityFeed)
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 20)
+            }
+            
+            Spacer()
+        }
+        .frame(width: 380)
+        .background(
+            RoundedRectangle(cornerRadius: 0)
+                .fill(Color.white.opacity(0.92))
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 5, y: 0)
+        )
+    }
+    
+    // Sample tasks data
+    var sampleTasks: [Task] {
+        [
+            Task(
+                id: "1",
+                title: "Redesign Signup Flow", 
+                deadline: "60 min",
+                goal: "Improve mobile UX + 3-step signup",
+                founderChallenge: "Why this layout? Send Loom in 5 min.",
+                deliverables: ["Figma link", "Loom link"],
+                status: .active
+            ),
+            Task(
+                id: "2",
+                title: "Code Review Dashboard",
+                deadline: "45 min", 
+                goal: "Build responsive component with React",
+                founderChallenge: "Show me your testing approach",
+                deliverables: ["GitHub PR", "Test coverage"],
+                status: .pending
+            ),
+            Task(
+                id: "3",
+                title: "API Integration",
+                deadline: "30 min",
+                goal: "Connect payment gateway endpoints",
+                founderChallenge: "Handle edge cases and errors",
+                deliverables: ["Working demo", "Error handling"],
+                status: .completed
+            )
+        ]
     }
     
     private func toggleBuddyStatus(_ buddyId: String) {
@@ -329,6 +500,179 @@ struct ContentView: View {
         let minutes = 29 // Mock 29 minutes to match design
         return "\(minutes)m"
     }
+    
+    private func getStatusColor(_ buddy: Buddy) -> Color {
+        switch buddy.status {
+        case .watching: return .green
+        case .onBreak: return .orange
+        case .disabled: return .gray
+        }
+    }
+    
+    private func loadSampleActivityFeed() {
+        activityFeed = [
+            ActivityItem(
+                id: "1",
+                appName: "VSCode",
+                action: "Edited App.jsx",
+                timestamp: Date().addingTimeInterval(-120),
+                icon: "curlybraces",
+                color: .blue
+            ),
+            ActivityItem(
+                id: "2", 
+                appName: "Figma",
+                action: "Opened flow_signup.fig",
+                timestamp: Date().addingTimeInterval(-300),
+                icon: "pencil.and.outline",
+                color: .purple
+            ),
+            ActivityItem(
+                id: "3",
+                appName: "Cursor",
+                action: "GPT prompt: 'How to debounce react input?'",
+                timestamp: Date().addingTimeInterval(-420),
+                icon: "brain.head.profile",
+                color: .orange
+            ),
+            ActivityItem(
+                id: "4",
+                appName: "Chrome",
+                action: "Browsed 'stripe pricing flow best practices'",
+                timestamp: Date().addingTimeInterval(-600),
+                icon: "globe",
+                color: .green
+            ),
+            ActivityItem(
+                id: "5",
+                appName: "Terminal",
+                action: "Ran npm install react-debounce",
+                timestamp: Date().addingTimeInterval(-720),
+                icon: "terminal",
+                color: .black
+            )
+        ]
+        
+        // Simulate real-time updates
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in
+            addRandomActivity()
+        }
+    }
+    
+    private func addRandomActivity() {
+        let activities = [
+            ("VSCode", "Saved component file", "curlybraces", Color.blue),
+            ("Chrome", "Searched React docs", "globe", Color.green),
+            ("Terminal", "Git commit", "terminal", Color.black),
+            ("Figma", "Updated wireframe", "pencil.and.outline", Color.purple),
+            ("Slack", "Received message", "message", Color.indigo)
+        ]
+        
+        let randomActivity = activities.randomElement()!
+        let newActivity = ActivityItem(
+            id: UUID().uuidString,
+            appName: randomActivity.0,
+            action: randomActivity.1,
+            timestamp: Date(),
+            icon: randomActivity.2,
+            color: randomActivity.3
+        )
+        
+        activityFeed.insert(newActivity, at: 0)
+        if activityFeed.count > 10 {
+            activityFeed.removeLast()
+        }
+    }
+    
+    private func startJobSimulationWorkflow() {
+        // Start the job simulation workflow
+        workflowTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+            advanceWorkflowStep()
+        }
+    }
+    
+    private func advanceWorkflowStep() {
+        switch currentWorkflowStep {
+        case .taskAssignment:
+            // Simulate founder assigning a task
+            triggerFounderChallenge()
+            currentWorkflowStep = .observation
+            
+        case .observation:
+            // Founders are observing and may inject challenges
+            if Bool.random() {
+                injectFounderChallenge()
+            }
+            currentWorkflowStep = .feedback
+            
+        case .feedback:
+            // Provide async feedback
+            providAsyncFeedback()
+            currentWorkflowStep = .evaluation
+            
+        case .evaluation:
+            // Log performance and create snapshots
+            logPerformanceSnapshot()
+            currentWorkflowStep = .taskAssignment
+        }
+    }
+    
+    private func triggerFounderChallenge() {
+        // Simulate a founder challenge being injected
+        let challenges = [
+            "Can you explain your approach to this problem?",
+            "How would you handle edge cases here?",
+            "Show me how you would test this component",
+            "What performance considerations are you thinking about?"
+        ]
+        
+        // Simulate challenge appearing in chat
+        if let randomFounder = buddies.randomElement() {
+            // This would trigger a chat notification or message
+            print("🧠 \(randomFounder.name) asks: \(challenges.randomElement() ?? "")")
+        }
+    }
+    
+    private func injectFounderChallenge() {
+        // Inject a mid-task challenge or question
+        let contextualChallenges = [
+            "I notice you're taking a different approach than expected. Can you walk me through your reasoning?",
+            "Quick question - how are you handling error states in this flow?",
+            "Interesting solution! Have you considered the accessibility implications?",
+            "Before you continue, can you show me the test cases you're planning?"
+        ]
+        
+        if let randomFounder = buddies.filter({ $0.status == .watching }).randomElement() {
+            print("💬 \(randomFounder.name) interjects: \(contextualChallenges.randomElement() ?? "")")
+        }
+    }
+    
+    private func providAsyncFeedback() {
+        // Provide background feedback on current work
+        let feedbackMessages = [
+            "Good progress on the component structure!",
+            "I like how you're handling the state management",
+            "Consider extracting that logic into a custom hook",
+            "Nice attention to detail on the styling"
+        ]
+        
+        if let randomFounder = buddies.filter({ $0.status == .watching }).randomElement() {
+            print("✅ \(randomFounder.name) notes: \(feedbackMessages.randomElement() ?? "")")
+        }
+    }
+    
+    private func logPerformanceSnapshot() {
+        // Create a performance snapshot for the trial report
+        let snapshot = PerformanceSnapshot(
+            timestamp: Date(),
+            taskProgress: Double.random(in: 0.6...1.0),
+            focusScore: Double.random(in: 0.7...1.0),
+            codeQuality: Double.random(in: 0.8...1.0),
+            communicationScore: Double.random(in: 0.7...0.9)
+        )
+        
+        print("📊 Performance snapshot logged: \(Int(snapshot.overallScore * 100))%")
+    }
 }
 
 struct ModernBuddyRow: View {
@@ -336,6 +680,7 @@ struct ModernBuddyRow: View {
     let isHovered: Bool
     let onHover: (Bool) -> Void
     let onToggleStatus: () -> Void
+    let onTap: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -384,27 +729,39 @@ struct ModernBuddyRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(buddy.name)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.black.opacity(0.7))
-                    Text(getEmojiForBuddy(buddy))
-                        .font(.system(size: 12))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.black.opacity(0.8))
+                    Text(buddy.emoji)
+                        .font(.system(size: 14))
                 }
                 
-                Text(getStatusText(buddy))
+                Text(buddy.behaviorDescription)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.black.opacity(0.6))
             }
             
             Spacer()
             
-            // Status icon
-            Button(action: onToggleStatus) {
-                Image(systemName: getStatusIcon(buddy))
-                    .font(.system(size: 12))
-                    .foregroundColor(.black.opacity(0.6))
-                    .frame(width: 32, height: 32)
+            // Eye icon for observation status
+            HStack(spacing: 8) {
+                if buddy.status == .watching {
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "eye.slash.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray.opacity(0.6))
+                }
+                
+                Button(action: onToggleStatus) {
+                    Image(systemName: getStatusIcon(buddy))
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.6))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
@@ -415,25 +772,11 @@ struct ModernBuddyRow: View {
         .onHover { hovering in
             onHover(hovering)
         }
-    }
-    
-    private func getEmojiForBuddy(_ buddy: Buddy) -> String {
-        switch buddy.name {
-        case "Alex": return "⭐"
-        case "Sarah": return "💋"
-        case "Mike": return "😃"
-        default: return "👤"
+        .onTapGesture {
+            onTap()
         }
     }
     
-    private func getStatusText(_ buddy: Buddy) -> String {
-        switch buddy.name {
-        case "Alex": return "Analyzing your work"
-        case "Sarah": return "Providing assistance" 
-        case "Mike": return "Taking a break"
-        default: return "Watching your screen"
-        }
-    }
     
     private func getStatusIcon(_ buddy: Buddy) -> String {
         switch buddy.status {
@@ -585,6 +928,40 @@ struct Buddy: Identifiable {
     var status: BuddyStatus
     let avatar: String
     let profileImage: String?
+    let emoji: String
+    let behaviorDescription: String
+}
+
+struct Task: Identifiable {
+    let id: String
+    let title: String
+    let deadline: String
+    let goal: String
+    let founderChallenge: String
+    let deliverables: [String]
+    let status: TaskStatus
+}
+
+enum TaskStatus {
+    case active
+    case pending
+    case completed
+    
+    var color: Color {
+        switch self {
+        case .active: return .blue
+        case .pending: return .orange
+        case .completed: return .green
+        }
+    }
+    
+    var displayText: String {
+        switch self {
+        case .active: return "ACTIVE"
+        case .pending: return "PENDING"
+        case .completed: return "COMPLETED"
+        }
+    }
 }
 
 enum BuddyStatus {
@@ -606,6 +983,876 @@ enum BuddyStatus {
         case .onBreak: return "Taking a break"
         case .disabled: return "Taking a break"
         }
+    }
+}
+
+enum WorkflowStep {
+    case taskAssignment
+    case observation
+    case feedback
+    case evaluation
+    
+    var displayName: String {
+        switch self {
+        case .taskAssignment: return "Task Assignment"
+        case .observation: return "Observing"
+        case .feedback: return "Feedback"
+        case .evaluation: return "Evaluating"
+        }
+    }
+}
+
+struct PerformanceSnapshot {
+    let timestamp: Date
+    let taskProgress: Double
+    let focusScore: Double
+    let codeQuality: Double
+    let communicationScore: Double
+    
+    var overallScore: Double {
+        (taskProgress + focusScore + codeQuality + communicationScore) / 4
+    }
+}
+
+struct ActivityItem: Identifiable {
+    let id: String
+    let appName: String
+    let action: String
+    let timestamp: Date
+    let icon: String
+    let color: Color
+}
+
+struct DesktopFeedView: View {
+    let activityFeed: [ActivityItem]
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            if activityFeed.isEmpty {
+                VStack(spacing: 4) {
+                    Image(systemName: "desktopcomputer")
+                        .font(.system(size: 24))
+                        .foregroundColor(.black.opacity(0.3))
+                    Text("No activity detected")
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.5))
+                }
+                .frame(height: 80)
+            } else {
+                ForEach(activityFeed.prefix(5)) { activity in
+                    ActivityFeedRow(activity: activity)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black.opacity(0.02))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct ActivityFeedRow: View {
+    let activity: ActivityItem
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            // App icon
+            Circle()
+                .fill(activity.color.opacity(0.1))
+                .frame(width: 24, height: 24)
+                .overlay(
+                    Image(systemName: activity.icon)
+                        .font(.system(size: 10))
+                        .foregroundColor(activity.color)
+                )
+            
+            // Activity details
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("[\(activity.appName)]")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(activity.color)
+                    Text(activity.action)
+                        .font(.system(size: 11))
+                        .foregroundColor(.black.opacity(0.7))
+                }
+                
+                Text(formatTimeAgo(activity.timestamp))
+                    .font(.system(size: 10))
+                    .foregroundColor(.black.opacity(0.4))
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 2)
+    }
+    
+    private func formatTimeAgo(_ date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        let minutes = Int(interval) / 60
+        
+        if minutes < 1 {
+            return "just now"
+        } else if minutes == 1 {
+            return "1 min ago"
+        } else if minutes < 60 {
+            return "\(minutes) min ago"
+        } else {
+            let hours = minutes / 60
+            return "\(hours)h ago"
+        }
+    }
+}
+
+struct TaskCard: View {
+    let task: Task
+    @State private var isExpanded = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Task header
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(task.title)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.black.opacity(0.8))
+                        
+                        Spacer()
+                        
+                        // Status badge
+                        Text(task.status.displayText)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(task.status.color)
+                            )
+                    }
+                    
+                    // Deadline
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.black.opacity(0.5))
+                        Text("Deadline: \(task.deadline)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.black.opacity(0.6))
+                    }
+                }
+                
+                Button(action: { 
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                }) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10))
+                        .foregroundColor(.black.opacity(0.6))
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    Divider()
+                        .background(.black.opacity(0.1))
+                        .padding(.horizontal, 16)
+                    
+                    // Goal
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "target")
+                                .font(.system(size: 10))
+                                .foregroundColor(.black.opacity(0.6))
+                            Text("Goal:")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.7))
+                        }
+                        Text(task.goal)
+                            .font(.system(size: 11))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(.leading, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    // Founder Challenge
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "brain.head.profile")
+                                .font(.system(size: 10))
+                                .foregroundColor(.orange)
+                            Text("Founder Challenge:")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.orange)
+                        }
+                        Text(task.founderChallenge)
+                            .font(.system(size: 11))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(.orange.opacity(0.1))
+                            )
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    // Deliverables
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 10))
+                                .foregroundColor(.black.opacity(0.6))
+                            Text("Deliverables:")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.7))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(task.deliverables, id: \.self) { deliverable in
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(.black.opacity(0.3))
+                                        .frame(width: 4, height: 4)
+                                    Text(deliverable)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.black.opacity(0.7))
+                                }
+                            }
+                        }
+                        .padding(.leading, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.9))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(task.status.color.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        )
+    }
+}
+
+struct TrialReportView: View {
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        ZStack {
+            // Background overlay
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isPresented = false
+                }
+            
+            // Report panel
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header
+                        VStack(spacing: 8) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Trial Report")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.black.opacity(0.9))
+                                    Text("Job Simulation Summary")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.black.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: { isPresented = false }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.black.opacity(0.4))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            
+                            // Overall score
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Overall Performance")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                    Text("Ready for offer")
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundColor(.green)
+                                }
+                                Spacer()
+                                
+                                // Score circle
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.green.opacity(0.2), lineWidth: 8)
+                                        .frame(width: 80, height: 80)
+                                    Circle()
+                                        .trim(from: 0, to: 0.85)
+                                        .stroke(Color.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                                        .frame(width: 80, height: 80)
+                                        .rotationEffect(.degrees(-90))
+                                    Text("85%")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.green)
+                                }
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 20)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.green.opacity(0.05))
+                            )
+                        }
+                        
+                        // Daily overview
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Today's Overview")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            HStack(spacing: 16) {
+                                MetricCard(title: "Work Duration", value: "6h 24m", icon: "clock.fill", color: .blue)
+                                MetricCard(title: "Task Switches", value: "12", icon: "arrow.triangle.swap", color: .orange)
+                                MetricCard(title: "Focus Score", value: "92%", icon: "brain.head.profile", color: .purple)
+                            }
+                        }
+                        
+                        // Founder feedback section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Founder Feedback")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            VStack(spacing: 12) {
+                                FounderFeedbackCard(
+                                    founder: buddies[0],
+                                    rating: 5,
+                                    feedback: "Excellent code structure and clean implementation. Shows strong understanding of React patterns."
+                                )
+                                FounderFeedbackCard(
+                                    founder: buddies[1],
+                                    rating: 4,
+                                    feedback: "Good problem-solving approach. Could improve on asking clarifying questions earlier."
+                                )
+                                FounderFeedbackCard(
+                                    founder: buddies[2],
+                                    rating: 4,
+                                    feedback: "Solid technical execution. Communication during challenges was professional."
+                                )
+                            }
+                        }
+                        
+                        // Task completion section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Task Completion")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            VStack(spacing: 8) {
+                                TaskCompletionRow(task: "Redesign Signup Flow", score: 95, status: "Completed")
+                                TaskCompletionRow(task: "Code Review Dashboard", score: 88, status: "Completed")
+                                TaskCompletionRow(task: "API Integration", score: 78, status: "In Progress")
+                            }
+                        }
+                        
+                        // Recommendations
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Recommendations")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                RecommendationRow(text: "Continue with current approach to problem-solving", type: .positive)
+                                RecommendationRow(text: "Consider asking more questions during requirements gathering", type: .improvement)
+                                RecommendationRow(text: "Excellent debugging and error handling skills", type: .positive)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                }
+            }
+            .frame(width: 600, height: 700)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.98))
+                    .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
+            )
+        }
+    }
+    
+    // Sample buddies for feedback (using the main buddies array would be better)
+    private var buddies: [Buddy] {
+        [
+            Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: nil, emoji: "⭐", behaviorDescription: "Code Reviewer"),
+            Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil, emoji: "💋", behaviorDescription: "Product Manager"),
+            Buddy(id: "mike", name: "Mike", status: .watching, avatar: "M", profileImage: nil, emoji: "😀", behaviorDescription: "Tech Lead")
+        ]
+    }
+}
+
+struct MetricCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(color)
+            Text(value)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.black.opacity(0.9))
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.black.opacity(0.6))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(color.opacity(0.1))
+        )
+    }
+}
+
+struct FounderFeedbackCard: View {
+    let founder: Buddy
+    let rating: Int
+    let feedback: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Circle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Text(founder.avatar)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.black.opacity(0.8))
+                    )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(founder.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.black.opacity(0.8))
+                        Text(founder.emoji)
+                            .font(.system(size: 12))
+                    }
+                    
+                    HStack(spacing: 2) {
+                        ForEach(1...5, id: \.self) { star in
+                            Image(systemName: star <= rating ? "star.fill" : "star")
+                                .font(.system(size: 10))
+                                .foregroundColor(star <= rating ? .yellow : .black.opacity(0.3))
+                        }
+                    }
+                }
+                
+                Spacer()
+            }
+            
+            Text(feedback)
+                .font(.system(size: 12))
+                .foregroundColor(.black.opacity(0.7))
+                .lineLimit(nil)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.black.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.black.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct TaskCompletionRow: View {
+    let task: String
+    let score: Int
+    let status: String
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.black.opacity(0.8))
+                Text(status)
+                    .font(.system(size: 12))
+                    .foregroundColor(.black.opacity(0.5))
+            }
+            
+            Spacer()
+            
+            Text("\(score)%")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(score >= 80 ? .green : score >= 60 ? .orange : .red)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.black.opacity(0.02))
+        )
+    }
+}
+
+struct RecommendationRow: View {
+    let text: String
+    let type: RecommendationType
+    
+    enum RecommendationType {
+        case positive
+        case improvement
+        
+        var icon: String {
+            switch self {
+            case .positive: return "checkmark.circle.fill"
+            case .improvement: return "lightbulb.fill"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .positive: return .green
+            case .improvement: return .orange
+            }
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: type.icon)
+                .font(.system(size: 12))
+                .foregroundColor(type.color)
+            
+            Text(text)
+                .font(.system(size: 12))
+                .foregroundColor(.black.opacity(0.7))
+                .lineLimit(nil)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(type.color.opacity(0.1))
+        )
+    }
+}
+
+struct FounderChatView: View {
+    let buddy: Buddy
+    @Binding var isPresented: Bool
+    @State private var messageText = ""
+    @State private var selectedTab = "Today"
+    @State private var messages: [ChatMessage] = []
+    
+    let tabs = ["Today", "Timeline", "Feedback"]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            HStack {
+                Spacer()
+                VStack(spacing: 0) {
+                    // Chat header
+                    HStack {
+                        // Buddy avatar and info
+                        HStack(spacing: 10) {
+                            if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(Circle())
+                                } placeholder: {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.8))
+                                        .frame(width: 32, height: 32)
+                                        .overlay(
+                                            Text(buddy.avatar)
+                                                .font(.system(size: 12, weight: .bold))
+                                                .foregroundColor(.black.opacity(0.8))
+                                        )
+                                }
+                            } else {
+                                Circle()
+                                    .fill(Color.white.opacity(0.8))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(
+                                        Text(buddy.avatar)
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.black.opacity(0.8))
+                                    )
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Text(buddy.name)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                    Text(buddy.emoji)
+                                        .font(.system(size: 12))
+                                }
+                                Text("Founder")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.black.opacity(0.5))
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: { isPresented = false }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(.black.opacity(0.4))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.white.opacity(0.95))
+                    
+                    // Chat tabs
+                    HStack(spacing: 0) {
+                        ForEach(tabs, id: \.self) { tab in
+                            Button(action: { selectedTab = tab }) {
+                                Text(tab)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(selectedTab == tab ? .black.opacity(0.8) : .black.opacity(0.5))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Rectangle()
+                                            .fill(selectedTab == tab ? Color.white : Color.clear)
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .background(Color.black.opacity(0.05))
+                    
+                    // Message area
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 12) {
+                            if messages.isEmpty {
+                                VStack(spacing: 8) {
+                                    Text("Start a conversation with \(buddy.name)")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.black.opacity(0.6))
+                                    Text(buddy.behaviorDescription)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.black.opacity(0.5))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 40)
+                            } else {
+                                ForEach(messages) { message in
+                                    ChatBubble(message: message, buddy: buddy)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                    }
+                    .frame(height: 200)
+                    .background(Color.white.opacity(0.98))
+                    
+                    // Input area
+                    HStack(spacing: 10) {
+                        TextField("Type a message...", text: $messageText)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .font(.system(size: 12))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.black.opacity(0.05))
+                            )
+                        
+                        Button(action: sendMessage) {
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.blue))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        
+                        Button(action: {}) {
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.black.opacity(0.6))
+                                .padding(8)
+                                .background(Circle().fill(Color.black.opacity(0.1)))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.white.opacity(0.95))
+                }
+                .frame(width: 350)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.98))
+                        .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+                )
+                .padding(.trailing, 20)
+                .padding(.bottom, 20)
+            }
+        }
+        .onAppear {
+            loadInitialMessages()
+        }
+    }
+    
+    private func sendMessage() {
+        let trimmedText = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+        
+        let newMessage = ChatMessage(
+            id: UUID().uuidString,
+            text: trimmedText,
+            isFromUser: true,
+            timestamp: Date()
+        )
+        
+        messages.append(newMessage)
+        messageText = ""
+        
+        // Simulate founder response after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            let responses = [
+                "I see you're working on that. Good progress!",
+                "Interesting approach. Have you considered alternative methods?",
+                "That's exactly what I would expect from a strong candidate.",
+                "Keep going, you're on the right track."
+            ]
+            
+            let response = ChatMessage(
+                id: UUID().uuidString,
+                text: responses.randomElement() ?? "Thanks for the update!",
+                isFromUser: false,
+                timestamp: Date()
+            )
+            messages.append(response)
+        }
+    }
+    
+    private func loadInitialMessages() {
+        let initialMessages = [
+            ChatMessage(
+                id: "1",
+                text: "Hey there! I'm \(buddy.name). \(buddy.behaviorDescription.lowercased()). Feel free to ask me anything!",
+                isFromUser: false,
+                timestamp: Date().addingTimeInterval(-300)
+            )
+        ]
+        messages = initialMessages
+    }
+}
+
+struct ChatMessage: Identifiable {
+    let id: String
+    let text: String
+    let isFromUser: Bool
+    let timestamp: Date
+}
+
+struct ChatBubble: View {
+    let message: ChatMessage
+    let buddy: Buddy
+    
+    var body: some View {
+        HStack {
+            if message.isFromUser {
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(message.text)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.blue)
+                        )
+                    
+                    Text(formatTime(message.timestamp))
+                        .font(.system(size: 10))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+            } else {
+                HStack(alignment: .top, spacing: 8) {
+                    Circle()
+                        .fill(Color.white.opacity(0.8))
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Text(buddy.avatar)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.black.opacity(0.6))
+                        )
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(message.text)
+                            .font(.system(size: 12))
+                            .foregroundColor(.black.opacity(0.8))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.black.opacity(0.08))
+                            )
+                        
+                        Text(formatTime(message.timestamp))
+                            .font(.system(size: 10))
+                            .foregroundColor(.black.opacity(0.4))
+                    }
+                }
+                Spacer()
+            }
+        }
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 

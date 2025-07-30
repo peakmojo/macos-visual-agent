@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @StateObject private var screenMonitor = ScreenMonitor()
@@ -23,7 +24,7 @@ struct ContentView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(red: 0.85, green: 0.85, blue: 0.87))
+                .fill(Color.white.opacity(0.6))
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
@@ -62,7 +63,7 @@ struct ContentView: View {
                 ForEach(buddies.filter { $0.status == .watching }.prefix(2), id: \.id) { buddy in
                     ZStack {
                         Circle()
-                            .fill(Color.white.opacity(0.8))
+                            .fill(Color.white.opacity(0.6))
                             .frame(width: 24, height: 24)
                         
                         if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
@@ -136,11 +137,7 @@ struct ContentView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 0.85, green: 0.85, blue: 0.87).opacity(0.8))
-                )
+                .fill(Color.white.opacity(0.5))
         )
         .frame(height: 44)
     }
@@ -609,6 +606,33 @@ enum BuddyStatus {
         case .onBreak: return "Taking a break"
         case .disabled: return "Taking a break"
         }
+    }
+}
+
+struct VisualEffectBackground: NSViewRepresentable {
+    private let material: NSVisualEffectView.Material
+    private let blendingMode: NSVisualEffectView.BlendingMode
+    private let isEmphasized: Bool
+    
+    init(material: NSVisualEffectView.Material = .hudWindow, 
+         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow, 
+         emphasized: Bool = false) {
+        self.material = material
+        self.blendingMode = blendingMode
+        self.isEmphasized = emphasized
+    }
+    
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.autoresizingMask = [.width, .height]
+        view.state = .active
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        nsView.isEmphasized = isEmphasized
     }
 }
 

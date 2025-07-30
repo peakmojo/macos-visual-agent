@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var isExpanded = false
     @State private var hoveredBuddy: String? = nil
     @State private var showChat = false
+    @State private var showQuitConfirmation = false
     @State private var buddies = [
         Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face"),
         Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil),
@@ -27,6 +28,14 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
         .animation(.easeInOut(duration: 0.15), value: hoveredBuddy)
+        .alert("Quit WorkBuddy", isPresented: $showQuitConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Quit", role: .destructive) {
+                NSApplication.shared.terminate(nil)
+            }
+        } message: {
+            Text("Are you sure you want to quit WorkBuddy?")
+        }
         .onAppear {
             // Hardcoded - no database
         }
@@ -281,6 +290,22 @@ struct ContentView: View {
                 // Settings button
                 Button(action: {}) {
                     Image(systemName: "gearshape.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Divider()
+                    .background(.black.opacity(0.2))
+                    .frame(height: 20)
+                
+                // Quit button
+                Button(action: {
+                    showQuitConfirmation = true
+                }) {
+                    Image(systemName: "power")
                         .font(.system(size: 12))
                         .foregroundColor(.black.opacity(0.7))
                         .frame(maxWidth: .infinity)

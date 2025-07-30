@@ -36,6 +36,7 @@ class DatabaseManager: ObservableObject {
             Name TEXT,
             Status TEXT,
             Avatar TEXT,
+            ProfileImage TEXT,
             IsEnabled INTEGER,
             LastActivity TEXT);
         """
@@ -83,7 +84,7 @@ class DatabaseManager: ObservableObject {
     }
     
     func saveBuddy(_ buddy: Buddy) {
-        let insertSQL = "INSERT OR REPLACE INTO Buddies (Id, Name, Status, Avatar, IsEnabled, LastActivity) VALUES (?, ?, ?, ?, ?, ?)"
+        let insertSQL = "INSERT OR REPLACE INTO Buddies (Id, Name, Status, Avatar, ProfileImage, IsEnabled, LastActivity) VALUES (?, ?, ?, ?, ?, ?, ?)"
         var statement: OpaquePointer?
         
         if sqlite3_prepare_v2(db, insertSQL, -1, &statement, nil) == SQLITE_OK {
@@ -91,8 +92,9 @@ class DatabaseManager: ObservableObject {
             sqlite3_bind_text(statement, 2, buddy.name, -1, nil)
             sqlite3_bind_text(statement, 3, String(describing: buddy.status), -1, nil)
             sqlite3_bind_text(statement, 4, buddy.avatar, -1, nil)
-            sqlite3_bind_int(statement, 5, buddy.status != .disabled ? 1 : 0)
-            sqlite3_bind_text(statement, 6, ISO8601DateFormatter().string(from: Date()), -1, nil)
+            sqlite3_bind_text(statement, 5, buddy.profileImage, -1, nil)
+            sqlite3_bind_int(statement, 6, buddy.status != .disabled ? 1 : 0)
+            sqlite3_bind_text(statement, 7, ISO8601DateFormatter().string(from: Date()), -1, nil)
             
             if sqlite3_step(statement) == SQLITE_DONE {
                 print("Successfully saved buddy")
@@ -107,7 +109,7 @@ class DatabaseManager: ObservableObject {
     }
     
     func loadBuddies() -> [Buddy] {
-        let querySQL = "SELECT Id, Name, Status, Avatar, IsEnabled FROM Buddies"
+        let querySQL = "SELECT Id, Name, Status, Avatar, ProfileImage, IsEnabled FROM Buddies"
         var statement: OpaquePointer?
         var buddies: [Buddy] = []
         
@@ -117,7 +119,9 @@ class DatabaseManager: ObservableObject {
                 let name = String(describing: String(cString: sqlite3_column_text(statement, 1)))
                 let statusString = String(describing: String(cString: sqlite3_column_text(statement, 2)))
                 let avatar = String(describing: String(cString: sqlite3_column_text(statement, 3)))
-                let isEnabled = sqlite3_column_int(statement, 4) == 1
+                let profileImagePointer = sqlite3_column_text(statement, 4)
+                let profileImage = profileImagePointer != nil ? String(cString: profileImagePointer!) : nil
+                let isEnabled = sqlite3_column_int(statement, 5) == 1
                 
                 let status: BuddyStatus
                 switch statusString {
@@ -127,7 +131,7 @@ class DatabaseManager: ObservableObject {
                 default: status = isEnabled ? .watching : .disabled
                 }
                 
-                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: nil)
+                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: profileImage)
                 buddies.append(buddy)
             }
         } else {

@@ -7,9 +7,9 @@ struct ContentView: View {
     @State private var hoveredBuddy: String? = nil
     @State private var showChat = false
     @State private var buddies = [
-        Buddy(id: "alex", name: "Alex", status: .watching, avatar: "👨‍💻", profileImage: nil),
-        Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "👩‍💼", profileImage: nil),
-        Buddy(id: "mike", name: "Mike", status: .onBreak, avatar: "👨‍🦱", profileImage: nil)
+        Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"),
+        Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: "https://images.unsplash.com/photo-1494790108755-2616b612b77c?w=100&h=100&fit=crop&crop=face"),
+        Buddy(id: "mike", name: "Mike", status: .onBreak, avatar: "M", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face")
     ]
     
     var body: some View {
@@ -69,8 +69,24 @@ struct ContentView: View {
                         Circle()
                             .fill(Color.white)
                             .frame(width: 24, height: 24)
-                        Text(buddy.avatar)
-                            .font(.system(size: 12))
+                        
+                        if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
+                            AsyncImage(url: url) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 24, height: 24)
+                                    .clipShape(Circle())
+                            } placeholder: {
+                                Text(buddy.avatar)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.gray)
+                            }
+                        } else {
+                            Text(buddy.avatar)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
                     }
                     .overlay(
                         Circle()
@@ -80,7 +96,7 @@ struct ContentView: View {
                     // Status indicator dot
                     .overlay(
                         Circle()
-                            .fill(buddy.status == .watching ? .green : buddy.status == .onBreak ? .orange : .gray)
+                            .fill(buddy.status == .watching ? Color(red: 0.4, green: 0.8, blue: 0.4) : buddy.status == .onBreak ? Color(red: 1.0, green: 0.7, blue: 0.4) : Color(red: 0.6, green: 0.6, blue: 0.6))
                             .frame(width: 8, height: 8)
                             .overlay(
                                 Circle()
@@ -232,8 +248,24 @@ struct BuddyRow: View {
                     Circle()
                         .fill(Color.white)
                         .frame(width: 32, height: 32)
-                    Text(buddy.avatar)
-                        .font(.system(size: 16))
+                    
+                    if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Text(buddy.avatar)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                    } else {
+                        Text(buddy.avatar)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
                 }
                 
                 // Status indicator dot

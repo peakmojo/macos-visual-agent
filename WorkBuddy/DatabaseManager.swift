@@ -197,7 +197,7 @@ class DatabaseManager: ObservableObject {
                 default: status = isEnabled ? .watching : .disabled
                 }
                 
-                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: profileImage, emoji: emoji, behaviorDescription: behaviorDescription)
+                let buddy = Buddy(id: id, name: name, status: status, avatar: avatar, profileImage: profileImage, emoji: emoji, behaviorDescription: behaviorDescription, callState: .idle)
                 buddies.append(buddy)
             }
         } else {

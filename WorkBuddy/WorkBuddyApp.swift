@@ -41,8 +41,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupOverlayWindow() {
         let contentView = ContentView()
         
+        // Start with larger size to accommodate both collapsed and expanded states
         overlayWindow = CustomWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -54,7 +55,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         overlayWindow?.level = NSWindow.Level.floating
         overlayWindow?.ignoresMouseEvents = false
         overlayWindow?.acceptsMouseMovedEvents = true
-        overlayWindow?.collectionBehavior = [.canJoinAllSpaces]
+        overlayWindow?.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle]
         overlayWindow?.isMovableByWindowBackground = true
         
         // Add rounded corners to the window
@@ -135,6 +136,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+    
+    func updateWindowSize(isExpanded: Bool, showTaskTimeline: Bool) {
+        guard let window = overlayWindow else { 
+            print("Warning: overlayWindow is nil")
+            return 
+        }
+        
+        let newSize: NSSize
+        if showTaskTimeline {
+            // When task timeline is shown, window takes more space
+            newSize = isExpanded ? NSSize(width: 780, height: 500) : NSSize(width: 700, height: 80)
+        } else {
+            // When task timeline is hidden, smaller footprint
+            newSize = isExpanded ? NSSize(width: 400, height: 500) : NSSize(width: 360, height: 80)
+        }
+        
+        print("Updating window size to: \(newSize), isExpanded: \(isExpanded), showTaskTimeline: \(showTaskTimeline)")
+        
+        // Get current frame and preserve position
+        let currentFrame = window.frame
+        let newFrame = NSRect(
+            x: currentFrame.origin.x,
+            y: currentFrame.origin.y - (newSize.height - currentFrame.size.height), // Adjust y to keep top-right anchor
+            width: newSize.width,
+            height: newSize.height
+        )
+        
+        // Ensure window stays visible
+        window.setFrame(newFrame, display: true, animate: true)
+        window.makeKeyAndOrderFront(nil)
     }
 }
 

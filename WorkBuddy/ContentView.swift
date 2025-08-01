@@ -9,39 +9,85 @@ struct ContentView: View {
     @State private var showChat = false
     @State private var selectedChatBuddy: Buddy? = nil
     @State private var showQuitConfirmation = false
-    @State private var showTaskTimeline = true
+    @State private var showTaskTimeline = false
     @State private var activityFeed: [ActivityItem] = []
     @State private var showTrialReport = false
     @State private var currentWorkflowStep: WorkflowStep = .taskAssignment
     @State private var workflowTimer: Timer?
     @State private var buddies = [
-        Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face", emoji: "⭐", behaviorDescription: "Analyzing your code structure"),
-        Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil, emoji: "💋", behaviorDescription: "Providing async feedback"),
-        Buddy(id: "mike", name: "Mike", status: .onBreak, avatar: "M", profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face", emoji: "😀", behaviorDescription: "Taking a break")
+        Buddy(id: "bary", name: "Bary", status: .disabled, avatar: "B", profileImage: "https://readymojo-uploads.s3.us-east-2.amazonaws.com/public-data/ai-interviewers/default/bary_headshot.jpeg", emoji: "⭐", behaviorDescription: "Analyzing your code structure", callState: .idle),
+        Buddy(id: "tian", name: "Tian", status: .disabled, avatar: "T", profileImage: "https://readymojo-uploads.s3.us-east-2.amazonaws.com/public-data/ai-interviewers/default/tian_headshot.jpeg", emoji: "💋", behaviorDescription: "Providing async feedback", callState: .idle)
     ]
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Left: Task Timeline area (collapsible)
+        Group {
             if showTaskTimeline {
-                taskTimelineArea
-                    .transition(.move(edge: .leading))
-            }
-            
-            Spacer()
-            
-            // Right: Work Buddies components
-            VStack {
-                if isExpanded {
-                    workBuddiesPanel
-                } else {
-                    miniOverlayBar
+                // When Task Timeline is open: side-by-side layout
+                HStack(spacing: 0) {
+                    taskTimelineArea
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+                    
+                    // Right area for Work Buddies components
+                    if isExpanded {
+                        // Expanded panel on the right
+                        HStack {
+                            Spacer()
+                            VStack {
+                                workBuddiesPanel
+                                Spacer()
+                            }
+                        }
+                    } else {
+                        // Collapsed bar in the right area
+                        VStack {
+                            Spacer()
+                                .frame(height: 20)
+                            HStack {
+                                Spacer()
+                                miniOverlayBar
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                    }
                 }
-                Spacer()
+            } else {
+                // When Task Timeline is closed: overlay layout
+                GeometryReader { geometry in
+                    if isExpanded {
+                        // Expanded panel positioned on the right
+                        HStack {
+                            Spacer()
+                            VStack {
+                                workBuddiesPanel
+                                Spacer()
+                            }
+                        }
+                    } else {
+                        // Collapsed bar positioned at top center
+                        VStack {
+                            HStack {
+                                Spacer()
+                                miniOverlayBar
+                                Spacer()
+                            }
+                            .padding(.top, 16)
+                            Spacer()
+                        }
+                    }
+                }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
+        .animation(.easeInOut(duration: 0.25), value: showTaskTimeline)
         .animation(.easeInOut(duration: 0.15), value: hoveredBuddy)
+        // Temporarily disabled to debug disappearing window issue
+        // .onChange(of: isExpanded) { _ in
+        //     updateAppWindowSize()
+        // }
+        // .onChange(of: showTaskTimeline) { _ in
+        //     updateAppWindowSize()
+        // }
         .alert("Quit WorkBuddy", isPresented: $showQuitConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Quit", role: .destructive) {
@@ -95,22 +141,30 @@ struct ContentView: View {
             HStack(spacing: -6) {
                 ForEach(buddies.filter { $0.status == .watching }.prefix(2), id: \.id) { buddy in
                     ZStack {
-                        if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
-                            AsyncImage(url: url) { image in
-                                image
+                        if let profileImage = buddy.profileImage {
+                            if profileImage.hasPrefix("http") {
+                                AsyncImage(url: URL(string: profileImage)) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 28, height: 28)
+                                        .clipShape(Circle())
+                                } placeholder: {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.8))
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Text(buddy.avatar)
+                                                .font(.system(size: 11, weight: .bold))
+                                                .foregroundColor(.black.opacity(0.8))
+                                        )
+                                }
+                            } else {
+                                Image(profileImage)
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 28, height: 28)
                                     .clipShape(Circle())
-                            } placeholder: {
-                                Circle()
-                                    .fill(Color.white.opacity(0.8))
-                                    .frame(width: 28, height: 28)
-                                    .overlay(
-                                        Text(buddy.avatar)
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.black.opacity(0.8))
-                                    )
                             }
                         } else {
                             Circle()
@@ -125,7 +179,7 @@ struct ContentView: View {
                     }
                     .overlay(
                         Circle()
-                            .fill(getStatusColor(buddy))
+                            .fill(buddy.status.color)
                             .frame(width: 8, height: 8)
                             .offset(x: 10, y: 10)
                     )
@@ -135,8 +189,8 @@ struct ContentView: View {
                 }
             }
             
-            // Right: ⏱ 29m + expand button
-            HStack(spacing: 6) {
+            // Right: ⏱ 29m + tasks button + expand button
+            HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image(systemName: "clock.fill")
                         .foregroundColor(.black.opacity(0.7))
@@ -146,6 +200,18 @@ struct ContentView: View {
                         .font(.system(size: 12, weight: .medium))
                         .monospacedDigit()
                 }
+                
+                Button(action: { 
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showTaskTimeline.toggle() 
+                    }
+                }) {
+                    Image(systemName: showTaskTimeline ? "list.bullet.rectangle.fill" : "list.bullet.rectangle")
+                        .foregroundColor(showTaskTimeline ? .blue : .black.opacity(0.7))
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Toggle Task Timeline")
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.down")
@@ -231,7 +297,7 @@ struct ContentView: View {
                             hoveredBuddy = isHovered ? buddy.id : nil
                         },
                         onToggleStatus: {
-                            toggleBuddyStatus(buddy.id)
+                            handleBuddyCall(buddy.id)
                         },
                         onTap: {
                             selectedChatBuddy = buddy
@@ -392,11 +458,11 @@ struct ContentView: View {
                 Spacer()
                 
                 Button(action: { 
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.25)) {
                         showTaskTimeline.toggle()
                     }
                 }) {
-                    Image(systemName: "chevron.left")
+                    Image(systemName: "sidebar.left")
                         .font(.system(size: 12))
                         .foregroundColor(.black.opacity(0.6))
                 }
@@ -450,9 +516,12 @@ struct ContentView: View {
         }
         .frame(width: 380)
         .background(
+            Rectangle()
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: .black.opacity(0.1), radius: 15, x: 3, y: 0)
+        )
+        .clipShape(
             RoundedRectangle(cornerRadius: 0)
-                .fill(Color.white.opacity(0.92))
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 5, y: 0)
         )
     }
     
@@ -489,9 +558,32 @@ struct ContentView: View {
         ]
     }
     
-    private func toggleBuddyStatus(_ buddyId: String) {
-        if let index = buddies.firstIndex(where: { $0.id == buddyId }) {
-            buddies[index].status = buddies[index].status == .watching ? .disabled : .watching
+    private func handleBuddyCall(_ buddyId: String) {
+        guard let index = buddies.firstIndex(where: { $0.id == buddyId }) else { return }
+        
+        switch buddies[index].callState {
+        case .idle:
+            // Start call - show connected state
+            buddies[index].callState = .connected
+            buddies[index].status = .onBreak
+            
+            // After 2 seconds, transition to watching
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                if buddies.indices.contains(index) && buddies[index].callState == .connected {
+                    buddies[index].callState = .watching
+                    buddies[index].status = .watching
+                }
+            }
+            
+        case .connected:
+            // Skip to watching immediately if user clicks while connecting
+            buddies[index].callState = .watching
+            buddies[index].status = .watching
+            
+        case .watching:
+            // Hang up - return to idle state but keep in list
+            buddies[index].callState = .idle
+            buddies[index].status = .disabled
         }
     }
     
@@ -499,14 +591,6 @@ struct ContentView: View {
         // For now, return a simple format. This could be connected to actual session tracking later
         let minutes = 29 // Mock 29 minutes to match design
         return "\(minutes)m"
-    }
-    
-    private func getStatusColor(_ buddy: Buddy) -> Color {
-        switch buddy.status {
-        case .watching: return .green
-        case .onBreak: return .orange
-        case .disabled: return .gray
-        }
     }
     
     private func loadSampleActivityFeed() {
@@ -673,6 +757,12 @@ struct ContentView: View {
         
         print("📊 Performance snapshot logged: \(Int(snapshot.overallScore * 100))%")
     }
+    
+    private func updateAppWindowSize() {
+        if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+            appDelegate.updateWindowSize(isExpanded: isExpanded, showTaskTimeline: showTaskTimeline)
+        }
+    }
 }
 
 struct ModernBuddyRow: View {
@@ -686,22 +776,30 @@ struct ModernBuddyRow: View {
         HStack(spacing: 12) {
             // Avatar with status indicator
             ZStack(alignment: .bottomTrailing) {
-                if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
-                    AsyncImage(url: url) { image in
-                        image
+                if let profileImage = buddy.profileImage {
+                    if profileImage.hasPrefix("http") {
+                        AsyncImage(url: URL(string: profileImage)) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 44, height: 44)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(.white.opacity(0.2))
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Text(buddy.avatar)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                )
+                        }
+                    } else {
+                        Image(profileImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 44, height: 44)
                             .clipShape(Circle())
-                    } placeholder: {
-                        Circle()
-                            .fill(.white.opacity(0.2))
-                            .frame(width: 44, height: 44)
-                            .overlay(
-                                Text(buddy.avatar)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                            )
                     }
                 } else {
                     Circle()
@@ -716,7 +814,7 @@ struct ModernBuddyRow: View {
                 
                 // Status indicator dot
                 Circle()
-                    .fill(getStatusColor(buddy))
+                    .fill(buddy.status.color)
                     .frame(width: 12, height: 12)
                     .overlay(
                         Circle()
@@ -742,26 +840,18 @@ struct ModernBuddyRow: View {
             
             Spacer()
             
-            // Eye icon for observation status
-            HStack(spacing: 8) {
-                if buddy.status == .watching {
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.green)
-                } else {
-                    Image(systemName: "eye.slash.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray.opacity(0.6))
-                }
-                
-                Button(action: onToggleStatus) {
-                    Image(systemName: getStatusIcon(buddy))
-                        .font(.system(size: 12))
-                        .foregroundColor(.black.opacity(0.6))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(PlainButtonStyle())
+            // Phone call button
+            Button(action: onToggleStatus) {
+                Image(systemName: buddy.callState.buttonIcon)
+                    .font(.system(size: 14))
+                    .foregroundColor(buddy.callState.buttonColor)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        Circle()
+                            .fill(buddy.callState.buttonColor.opacity(0.1))
+                    )
             }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
@@ -777,22 +867,6 @@ struct ModernBuddyRow: View {
         }
     }
     
-    
-    private func getStatusIcon(_ buddy: Buddy) -> String {
-        switch buddy.status {
-        case .watching: return "eye.fill"
-        case .onBreak: return "phone.down.fill"
-        case .disabled: return "phone.down.fill"
-        }
-    }
-    
-    private func getStatusColor(_ buddy: Buddy) -> Color {
-        switch buddy.status {
-        case .watching: return .green
-        case .onBreak: return .orange
-        case .disabled: return .gray
-        }
-    }
 }
 
 struct StatusBarView: View {
@@ -930,6 +1004,7 @@ struct Buddy: Identifiable {
     let profileImage: String?
     let emoji: String
     let behaviorDescription: String
+    var callState: CallState
 }
 
 struct Task: Identifiable {
@@ -982,6 +1057,28 @@ enum BuddyStatus {
         case .watching: return "Watching your screen"
         case .onBreak: return "Taking a break"
         case .disabled: return "Taking a break"
+        }
+    }
+}
+
+enum CallState {
+    case idle
+    case connected
+    case watching
+    
+    var buttonIcon: String {
+        switch self {
+        case .idle: return "phone"
+        case .connected: return "phone.connection"
+        case .watching: return "phone.down"
+        }
+    }
+    
+    var buttonColor: Color {
+        switch self {
+        case .idle: return .blue
+        case .connected: return .green
+        case .watching: return .red
         }
     }
 }
@@ -1405,9 +1502,9 @@ struct TrialReportView: View {
     // Sample buddies for feedback (using the main buddies array would be better)
     private var buddies: [Buddy] {
         [
-            Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: nil, emoji: "⭐", behaviorDescription: "Code Reviewer"),
-            Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil, emoji: "💋", behaviorDescription: "Product Manager"),
-            Buddy(id: "mike", name: "Mike", status: .watching, avatar: "M", profileImage: nil, emoji: "😀", behaviorDescription: "Tech Lead")
+            Buddy(id: "alex", name: "Alex", status: .watching, avatar: "A", profileImage: nil, emoji: "⭐", behaviorDescription: "Code Reviewer", callState: .watching),
+            Buddy(id: "sarah", name: "Sarah", status: .watching, avatar: "S", profileImage: nil, emoji: "💋", behaviorDescription: "Product Manager", callState: .watching),
+            Buddy(id: "mike", name: "Mike", status: .watching, avatar: "M", profileImage: nil, emoji: "😀", behaviorDescription: "Tech Lead", callState: .watching)
         ]
     }
 }
@@ -1591,22 +1688,30 @@ struct FounderChatView: View {
                     HStack {
                         // Buddy avatar and info
                         HStack(spacing: 10) {
-                            if let profileImage = buddy.profileImage, let url = URL(string: profileImage) {
-                                AsyncImage(url: url) { image in
-                                    image
+                            if let profileImage = buddy.profileImage {
+                                if profileImage.hasPrefix("http") {
+                                    AsyncImage(url: URL(string: profileImage)) { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                    } placeholder: {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.8))
+                                            .frame(width: 32, height: 32)
+                                            .overlay(
+                                                Text(buddy.avatar)
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(.black.opacity(0.8))
+                                            )
+                                    }
+                                } else {
+                                    Image(profileImage)
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .frame(width: 32, height: 32)
                                         .clipShape(Circle())
-                                } placeholder: {
-                                    Circle()
-                                        .fill(Color.white.opacity(0.8))
-                                        .frame(width: 32, height: 32)
-                                        .overlay(
-                                            Text(buddy.avatar)
-                                                .font(.system(size: 12, weight: .bold))
-                                                .foregroundColor(.black.opacity(0.8))
-                                        )
                                 }
                             } else {
                                 Circle()

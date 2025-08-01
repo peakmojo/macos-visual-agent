@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		356D9B6439354AEFAA46A99B /* bary_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 1C99563474D24779AEF138B9 /* bary_headshot.jpeg */; };
 		A1111111111111111111111A /* WorkBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1111111111111111111111B /* WorkBuddyApp.swift */; };
 		A2222222222222222222222A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2222222222222222222222B /* ContentView.swift */; };
 		A3333333333333333333333A /* ScreenMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3333333333333333333333B /* ScreenMonitor.swift */; };
 		A4444444444444444444444A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4444444444444444444444B /* DatabaseManager.swift */; };
+		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1C99563474D24779AEF138B9 /* bary_headshot.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bary_headshot.jpeg; sourceTree = "<group>"; };
+		2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tian_headshot.jpeg; sourceTree = "<group>"; };
 		A0000000000000000000000A /* WorkBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1111111111111111111111B /* WorkBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkBuddyApp.swift; sourceTree = "<group>"; };
 		A2222222222222222222222B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -57,6 +61,8 @@
 				A2222222222222222222222B /* ContentView.swift */,
 				A3333333333333333333333B /* ScreenMonitor.swift */,
 				A4444444444444444444444B /* DatabaseManager.swift */,
+				1C99563474D24779AEF138B9 /* bary_headshot.jpeg */,
+				2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */,
 				A5555555555555555555555B /* WorkBuddy.entitlements */,
 				A6666666666666666666666B /* Info.plist */,
 			);
@@ -121,6 +127,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				356D9B6439354AEFAA46A99B /* bary_headshot.jpeg in Resources */,
+				B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

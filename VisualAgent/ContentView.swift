@@ -39,13 +39,49 @@ struct ContentView: View {
                             }
                         }
                     } else {
-                        // Collapsed bar in the right area
+                        // Collapsed bar in the right area with optional Action Window below
                         VStack {
                             Spacer()
                                 .frame(height: 20)
                             HStack {
                                 Spacer()
-                                miniOverlayBar
+                                VStack(spacing: 0) {
+                                    miniOverlayBar
+
+                                    // Action Window attached panel (curtain drop)
+                                    if showActionWindow {
+                                        ActionWindowView()
+                                            .frame(width: 420, height: 480)
+                                            .background(
+                                                VStack(spacing: 0) {
+                                                    // Seamless connection to main bar
+                                                    Rectangle()
+                                                        .fill(Color.white.opacity(0.7))
+                                                        .frame(height: 12)
+
+                                                    // Main panel background
+                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                        .fill(Color.white.opacity(0.7))
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                                        )
+                                                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+                                                }
+                                            )
+                                            .clipShape(
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 0,
+                                                    bottomLeadingRadius: 24,
+                                                    bottomTrailingRadius: 24,
+                                                    topTrailingRadius: 0,
+                                                    style: .continuous
+                                                )
+                                            )
+                                            .transition(.move(edge: .top).combined(with: .opacity))
+                                            .zIndex(10)
+                                    }
+                                }
                                 Spacer()
                             }
                             Spacer()
@@ -65,11 +101,47 @@ struct ContentView: View {
                             }
                         }
                     } else {
-                        // Collapsed bar positioned at top center
+                        // Collapsed bar positioned at top center with optional Action Window below
                         VStack {
                             HStack {
                                 Spacer()
-                                miniOverlayBar
+                                VStack(spacing: 0) {
+                                    miniOverlayBar
+
+                                    // Action Window attached panel (curtain drop)
+                                    if showActionWindow {
+                                        ActionWindowView()
+                                            .frame(width: 420, height: 480)
+                                            .background(
+                                                VStack(spacing: 0) {
+                                                    // Seamless connection to main bar
+                                                    Rectangle()
+                                                        .fill(Color.white.opacity(0.7))
+                                                        .frame(height: 12)
+
+                                                    // Main panel background
+                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                        .fill(Color.white.opacity(0.7))
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                                        )
+                                                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+                                                }
+                                            )
+                                            .clipShape(
+                                                UnevenRoundedRectangle(
+                                                    topLeadingRadius: 0,
+                                                    bottomLeadingRadius: 24,
+                                                    bottomTrailingRadius: 24,
+                                                    topTrailingRadius: 0,
+                                                    style: .continuous
+                                                )
+                                            )
+                                            .transition(.move(edge: .top).combined(with: .opacity))
+                                            .zIndex(10)
+                                    }
+                                }
                                 Spacer()
                             }
                             .padding(.top, 16)
@@ -118,35 +190,6 @@ struct ContentView: View {
             Group {
                 if showTrialReport {
                     TrialReportView(isPresented: $showTrialReport)
-                }
-            }
-        )
-        .overlay(
-            // Action Window overlay
-            Group {
-                if showActionWindow {
-                    HStack {
-                        ActionWindowView()
-                            .frame(width: 400, height: 600)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.98))
-                                    .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-                            )
-                            .transition(.move(edge: .leading).combined(with: .opacity))
-                        Spacer()
-                    }
-                    .padding(.leading, 20)
-                    .onTapGesture {
-                        // Prevent closing when tapping inside
-                    }
-                    .background(
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                showActionWindow = false
-                            }
-                    )
                 }
             }
         )
@@ -250,14 +293,15 @@ struct ContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Toggle Action Window")
-                
-                Button(action: { isExpanded.toggle() }) {
-                    Image(systemName: "chevron.down")
+
+                Button(action: { showQuitConfirmation = true }) {
+                    Image(systemName: "power")
                         .foregroundColor(.black.opacity(0.7))
-                        .font(.system(size: 10))
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .font(.system(size: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
+                .help("Quit Visual Agent")
+
             }
         }
         .padding(.horizontal, 16)
@@ -267,7 +311,7 @@ struct ContentView: View {
                 .fill(Color.white.opacity(0.9))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
-        .frame(width: 320, height: 48)
+        .frame(width: 420, height: 48)
     }
     
     // Work Buddies Panel - 400px width, half screen height, right-side slide out

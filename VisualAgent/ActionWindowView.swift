@@ -20,7 +20,7 @@ struct ActionWindowView: View {
             // Footer with controls
             footerSection
         }
-        .background(Color.black.opacity(0.02))
+        .background(Color.clear)
         .onAppear {
             Task {
                 await contextManager.startStreaming()
@@ -36,17 +36,13 @@ struct ActionWindowView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Visual Agent")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black.opacity(0.9))
-
                 if let context = contextManager.currentContext {
                     Text("\(context.captureContext.frontmostAppName ?? "Unknown App")")
-                        .font(.system(size: 12))
-                        .foregroundColor(.black.opacity(0.6))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black.opacity(0.9))
                 } else {
                     Text("No active context")
-                        .font(.system(size: 12))
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.black.opacity(0.4))
                 }
             }

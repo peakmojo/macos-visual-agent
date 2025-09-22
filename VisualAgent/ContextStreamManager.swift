@@ -11,11 +11,13 @@ class ContextStreamManager: ObservableObject {
     @Published var isStreaming = false
     @Published var lastUpdateTime: Date?
     @Published var processingStats = ProcessingStats()
+    @Published var coreMLStats = CoreMLStats()
 
     // MARK: - Core Components
     private var screenCaptureManager: ScreenCaptureManager?
     private let visionTextExtractor = VisionTextExtractor()
     private let accessibilityAnalyzer = AccessibilityAnalyzer()
+    private var coreMLScreenDescriber: CoreMLScreenDescriber?
     // Mouse event recording disabled to prevent interference with mouse functionality
     // private let mouseEventRecorder = MouseEventRecorder()
 
@@ -43,6 +45,11 @@ class ContextStreamManager: ObservableObject {
             }
         } else {
             print("⚠️ ScreenCaptureKit requires macOS 12.3+")
+        }
+
+        // Initialize CoreML screen describer
+        if #available(macOS 12.0, *) {
+            coreMLScreenDescriber = CoreMLScreenDescriber()
         }
     }
 
@@ -97,6 +104,7 @@ class ContextStreamManager: ObservableObject {
 
         // Ensure processing doesn't exceed 1 second to maintain 1 FPS
         let maxProcessingTime: TimeInterval = 0.9 // Leave 0.1s buffer
+        let maxProcessingTimeWithCoreML: TimeInterval = 1.5 // Allow more time for CoreML analysis
 
         // Process concurrently to maintain 1 FPS
         async let textStrings = visionTextExtractor.extractText(from: image)
@@ -115,19 +123,40 @@ class ContextStreamManager: ObservableObject {
         let elapsedTime = currentTime - startTime
 
         var screenDescription: String
-        if elapsedTime < maxProcessingTime {
-            // Mouse event correlation disabled to prevent interference with mouse functionality
-            let recentMouseEvents: [MouseEventData] = []
-            let correlatedEvents: [MouseEventData] = []
 
-            // Generate screen description with already extracted text and windows
-            screenDescription = await visionTextExtractor.generateScreenDescriptionWithData(
-                from: image,
-                textStrings: extractedText,
-                textElements: extractedTextWithPositions,
-                windowStructure: extractedWindows,
-                recentMouseEvents: []
-            )
+        // Always generate base description first
+        let baseDescription = await visionTextExtractor.generateScreenDescriptionWithData(
+            from: image,
+            textStrings: extractedText,
+            textElements: extractedTextWithPositions,
+            windowStructure: extractedWindows,
+            recentMouseEvents: []
+        )
+
+        // Try CoreML enhancement based on available time
+        if elapsedTime < maxProcessingTimeWithCoreML {
+            // We have time for CoreML enhancement
+            if #available(macOS 12.0, *), let coreMLDescriber = coreMLScreenDescriber {
+                let coreMLStartTime = CFAbsoluteTimeGetCurrent()
+                print("🧠 Attempting CoreML enhancement (elapsed: \(String(format: "%.3f", elapsedTime))s)")
+                screenDescription = await coreMLDescriber.enhanceScreenDescription(
+                    baseDescription: baseDescription,
+                    from: image,
+                    textElements: extractedText,
+                    windowInfo: extractedWindows,
+                    uiElements: extractedUI
+                )
+                let coreMLTime = CFAbsoluteTimeGetCurrent() - coreMLStartTime
+                await updateCoreMLStats(processingTime: coreMLTime, wasUsed: true, reason: "success")
+            } else {
+                screenDescription = baseDescription
+                await updateCoreMLStats(processingTime: 0, wasUsed: false, reason: "unavailable")
+            }
+        } else if elapsedTime < maxProcessingTime {
+            // Use base description without CoreML
+            print("⏱️ Skipping CoreML due to time constraints (elapsed: \(String(format: "%.3f", elapsedTime))s)")
+            screenDescription = baseDescription
+            await updateCoreMLStats(processingTime: 0, wasUsed: false, reason: "timeout")
         } else {
             // Use simple description to maintain 1 FPS
             let imageSize = CGSize(width: image.width, height: image.height)
@@ -389,6 +418,16 @@ class ContextStreamManager: ObservableObject {
         processingStats.lastUIElementCount = uiCount
         processingStats.totalUpdates += 1
     }
+
+    private func updateCoreMLStats(processingTime: Double, wasUsed: Bool, reason: String) async {
+        coreMLStats.totalAttempts += 1
+        if wasUsed {
+            coreMLStats.successfulUses += 1
+            coreMLStats.averageProcessingTime = (coreMLStats.averageProcessingTime + processingTime) / 2
+        }
+        coreMLStats.lastReason = reason
+        coreMLStats.lastAttemptTime = Date()
+    }
 }
 
 // MARK: - Supporting Types
@@ -446,6 +485,22 @@ struct ProcessingStats {
 
     var fps: Double {
         return totalUpdates > 0 ? 1.0 / averageProcessingTime : 0.0
+    }
+}
+
+struct CoreMLStats {
+    var totalAttempts: Int = 0
+    var successfulUses: Int = 0
+    var averageProcessingTime: Double = 0.0
+    var lastReason: String = "not attempted"
+    var lastAttemptTime: Date = Date()
+
+    var successRate: Double {
+        return totalAttempts > 0 ? Double(successfulUses) / Double(totalAttempts) : 0.0
+    }
+
+    var isCurrentlyWorking: Bool {
+        return lastReason == "success" && Date().timeIntervalSince(lastAttemptTime) < 10
     }
 }
 

@@ -3,7 +3,7 @@ import Foundation
 import CoreGraphics
 import AppKit
 
-class VisionTextExtractor: ObservableObject {
+class VisionTextExtractor: ObservableObject, @unchecked Sendable {
 
     // MARK: - Text Extraction
 

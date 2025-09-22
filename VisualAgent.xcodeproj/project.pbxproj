@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		356D9B6439354AEFAA46A99B /* bary_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 1C99563474D24779AEF138B9 /* bary_headshot.jpeg */; };
-		A1111111111111111111111A /* WorkBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1111111111111111111111B /* WorkBuddyApp.swift */; };
+		A1111111111111111111111A /* VisualAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1111111111111111111111B /* VisualAgentApp.swift */; };
 		A2222222222222222222222A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2222222222222222222222B /* ContentView.swift */; };
 		A3333333333333333333333A /* ScreenMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3333333333333333333333B /* ScreenMonitor.swift */; };
 		A4444444444444444444444A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4444444444444444444444B /* DatabaseManager.swift */; };
@@ -18,12 +18,12 @@
 /* Begin PBXFileReference section */
 		1C99563474D24779AEF138B9 /* bary_headshot.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bary_headshot.jpeg; sourceTree = "<group>"; };
 		2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = tian_headshot.jpeg; sourceTree = "<group>"; };
-		A0000000000000000000000A /* WorkBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1111111111111111111111B /* WorkBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkBuddyApp.swift; sourceTree = "<group>"; };
+		A0000000000000000000000A /* VisualAgent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisualAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1111111111111111111111B /* VisualAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualAgentApp.swift; sourceTree = "<group>"; };
 		A2222222222222222222222B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A3333333333333333333333B /* ScreenMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenMonitor.swift; sourceTree = "<group>"; };
 		A4444444444444444444444B /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
-		A5555555555555555555555B /* WorkBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkBuddy.entitlements; sourceTree = "<group>"; };
+		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
 		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -41,7 +41,7 @@
 		A8888888888888888888888A = {
 			isa = PBXGroup;
 			children = (
-				A9999999999999999999999A /* WorkBuddy */,
+				A9999999999999999999999A /* VisualAgent */,
 				AAAAAAAAAAAAAAAAAAAAAA0A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -49,32 +49,32 @@
 		AAAAAAAAAAAAAAAAAAAAAA0A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A0000000000000000000000A /* WorkBuddy.app */,
+				A0000000000000000000000A /* VisualAgent.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A9999999999999999999999A /* WorkBuddy */ = {
+		A9999999999999999999999A /* VisualAgent */ = {
 			isa = PBXGroup;
 			children = (
-				A1111111111111111111111B /* WorkBuddyApp.swift */,
+				A1111111111111111111111B /* VisualAgentApp.swift */,
 				A2222222222222222222222B /* ContentView.swift */,
 				A3333333333333333333333B /* ScreenMonitor.swift */,
 				A4444444444444444444444B /* DatabaseManager.swift */,
 				1C99563474D24779AEF138B9 /* bary_headshot.jpeg */,
 				2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */,
-				A5555555555555555555555B /* WorkBuddy.entitlements */,
+				A5555555555555555555555B /* VisualAgent.entitlements */,
 				A6666666666666666666666B /* Info.plist */,
 			);
-			path = WorkBuddy;
+			path = VisualAgent;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		ABBBBBBBBBBBBBBBBBBBBBB0 /* WorkBuddy */ = {
+		ABBBBBBBBBBBBBBBBBBBBBB0 /* VisualAgent */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ACCCCCCCCCCCCCCCCCCCCCC0 /* Build configuration list for PBXNativeTarget "WorkBuddy" */;
+			buildConfigurationList = ACCCCCCCCCCCCCCCCCCCCCC0 /* Build configuration list for PBXNativeTarget "VisualAgent" */;
 			buildPhases = (
 				ADDDDDDDDDDDDDDDDDDDDDD0 /* Sources */,
 				A7777777777777777777777A /* Frameworks */,
@@ -84,8 +84,8 @@
 			);
 			dependencies = (
 			);
-			name = WorkBuddy;
-			productName = WorkBuddy;
+			name = VisualAgent;
+			productName = VisualAgent;
 			productReference = A0000000000000000000000A /* WorkBuddy.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -104,7 +104,7 @@
 					};
 				};
 			};
-			buildConfigurationList = B0000000000000000000000A /* Build configuration list for PBXProject "WorkBuddy" */;
+			buildConfigurationList = B0000000000000000000000A /* Build configuration list for PBXProject "VisualAgent" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -117,7 +117,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				ABBBBBBBBBBBBBBBBBBBBBB0 /* WorkBuddy */,
+				ABBBBBBBBBBBBBBBBBBBBBB0 /* VisualAgent */,
 			);
 		};
 /* End PBXProject section */
@@ -142,7 +142,7 @@
 				A2222222222222222222222A /* ContentView.swift in Sources */,
 				A3333333333333333333333A /* ScreenMonitor.swift in Sources */,
 				A4444444444444444444444A /* DatabaseManager.swift in Sources */,
-				A1111111111111111111111A /* WorkBuddyApp.swift in Sources */,
+				A1111111111111111111111A /* VisualAgentApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -272,7 +272,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = WorkBuddy/WorkBuddy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = VisualAgent/VisualAgent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -280,7 +280,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = WorkBuddy/Info.plist;
+				INFOPLIST_FILE = VisualAgent/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -288,7 +288,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-lsqlite3";
-				PRODUCT_BUNDLE_IDENTIFIER = com.workbuddy.WorkBuddy;
+				PRODUCT_BUNDLE_IDENTIFIER = com.visualagent.VisualAgent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -300,7 +300,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = WorkBuddy/WorkBuddy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = VisualAgent/VisualAgent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -308,7 +308,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = WorkBuddy/Info.plist;
+				INFOPLIST_FILE = VisualAgent/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -316,7 +316,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-lsqlite3";
-				PRODUCT_BUNDLE_IDENTIFIER = com.workbuddy.WorkBuddy;
+				PRODUCT_BUNDLE_IDENTIFIER = com.visualagent.VisualAgent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -326,7 +326,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B0000000000000000000000A /* Build configuration list for PBXProject "WorkBuddy" */ = {
+		B0000000000000000000000A /* Build configuration list for PBXProject "VisualAgent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B1111111111111111111111A /* Debug */,
@@ -335,7 +335,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ACCCCCCCCCCCCCCCCCCCCCC0 /* Build configuration list for PBXNativeTarget "WorkBuddy" */ = {
+		ACCCCCCCCCCCCCCCCCCCCCC0 /* Build configuration list for PBXNativeTarget "VisualAgent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B3333333333333333333333A /* Debug */,

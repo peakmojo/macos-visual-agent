@@ -88,13 +88,13 @@ struct ContentView: View {
         // .onChange(of: showTaskTimeline) { _ in
         //     updateAppWindowSize()
         // }
-        .alert("Quit WorkBuddy", isPresented: $showQuitConfirmation) {
+        .alert("Quit Visual Agent", isPresented: $showQuitConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Quit", role: .destructive) {
                 NSApplication.shared.terminate(nil)
             }
         } message: {
-            Text("Are you sure you want to quit WorkBuddy?")
+            Text("Are you sure you want to quit Visual Agent?")
         }
         .onAppear {
             // Hardcoded - no database

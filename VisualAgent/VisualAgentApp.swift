@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct WorkBuddyApp: App {
+struct VisualAgentApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {  
@@ -11,12 +11,12 @@ struct WorkBuddyApp: App {
         }
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About WorkBuddy") {
+                Button("About Visual Agent") {
                     // About dialog could go here
                 }
             }
             CommandGroup(replacing: .appTermination) {
-                Button("Quit WorkBuddy") {
+                Button("Quit Visual Agent") {
                     NSApplication.shared.terminate(nil)
                 }
                 .keyboardShortcut("q", modifiers: .command)
@@ -110,13 +110,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create status bar menu (for right-click)
         let menu = NSMenu()
         
-        let showHideItem = NSMenuItem(title: "Show/Hide WorkBuddy", action: #selector(toggleOverlay), keyEquivalent: "")
+        let showHideItem = NSMenuItem(title: "Show/Hide Visual Agent", action: #selector(toggleOverlay), keyEquivalent: "")
         showHideItem.target = self
         menu.addItem(showHideItem)
         
         menu.addItem(NSMenuItem.separator())
         
-        let quitItem = NSMenuItem(title: "Quit WorkBuddy", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Visual Agent", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
         

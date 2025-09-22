@@ -1,4 +1,4 @@
-# WorkBuddy - macOS Desktop App
+# Visual Agent - macOS Desktop App
 
 A macOS desktop overlay app that monitors screen activity and allows team members to see each other's work status in real-time.
 
@@ -23,7 +23,7 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd workbuddy
+   cd visual-agent
    ```
 
 2. **Build using the script:**
@@ -33,7 +33,7 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 
 3. **Or build manually with Xcode:**
    ```bash
-   xcodebuild build -project WorkBuddy.xcodeproj -scheme WorkBuddy -configuration Release
+   xcodebuild build -project VisualAgent.xcodeproj -scheme VisualAgent -configuration Release
    ```
 
 ## Running the App
@@ -41,7 +41,7 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 1. **Grant Permissions:**
    - When first launched, the app will request Screen Recording and Accessibility permissions
    - Go to System Preferences → Security & Privacy → Privacy
-   - Enable permissions for WorkBuddy under "Screen Recording" and "Accessibility"
+   - Enable permissions for Visual Agent under "Screen Recording" and "Accessibility"
 
 2. **Launch the App:**
    - The app appears as an overlay in the top-right corner of your screen
@@ -61,13 +61,13 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 ## File Structure
 
 ```
-workbuddy/
-├── WorkBuddyApp.swift      # Main app entry point
+visual-agent/
+├── VisualAgentApp.swift    # Main app entry point
 ├── ContentView.swift       # Main UI components
 ├── ScreenMonitor.swift     # Screen monitoring functionality
 ├── DatabaseManager.swift   # SQLite database operations
-├── WorkBuddy.xcodeproj/    # Xcode project files
-├── WorkBuddy.entitlements  # App permissions
+├── VisualAgent.xcodeproj/  # Xcode project files
+├── VisualAgent.entitlements # App permissions
 ├── Info.plist             # App configuration
 ├── build.sh               # Build script
 └── README.md              # This file
@@ -84,7 +84,7 @@ workbuddy/
 
 To contribute or modify the app:
 
-1. Open `WorkBuddy.xcodeproj` in Xcode
+1. Open `VisualAgent.xcodeproj` in Xcode
 2. Make your changes
 3. Test thoroughly, especially permission handling
 4. Build and run using Xcode or the build script

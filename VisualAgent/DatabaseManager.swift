@@ -8,7 +8,7 @@ class DatabaseManager: ObservableObject {
     init() {
         let fileURL = try! FileManager.default
             .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-            .appendingPathComponent("workbuddy.sqlite")
+            .appendingPathComponent("visualagent.sqlite")
         
         dbPath = fileURL.path
         openDatabase()

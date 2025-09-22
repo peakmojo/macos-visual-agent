@@ -27,10 +27,10 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>WorkBuddy needs camera access for productivity monitoring features.</string>
+	<string>Visual Agent needs camera access for productivity monitoring features.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>WorkBuddy needs microphone access for productivity monitoring features.</string>
+	<string>Visual Agent needs microphone access for productivity monitoring features.</string>
 	<key>NSScreenCaptureDescription</key>
-	<string>WorkBuddy needs screen recording access to monitor productivity and share with your work buddies.</string>
+	<string>Visual Agent needs screen recording access to monitor productivity and share with your visual agents.</string>
 </dict>
 </plist>

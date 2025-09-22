@@ -4,10 +4,11 @@ import CoreGraphics
 import AppKit
 
 @available(macOS 12.3, *)
-class ScreenCaptureManager: NSObject, ObservableObject {
-    private var stream: SCStream?
+class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
+    private var currentStream: SCStream?
     private var availableContent: SCShareableContent?
     private var isCapturing = false
+    private var captureOutput: CaptureOutput?
 
     // Configuration
     private let captureInterval: TimeInterval = 0.5 // 2 FPS
@@ -63,6 +64,16 @@ class ScreenCaptureManager: NSObject, ObservableObject {
     func stopCapturing() {
         captureTimer?.invalidate()
         captureTimer = nil
+
+        // Stop current stream properly
+        if let stream = currentStream {
+            Task {
+                try? await stream.stopCapture()
+                self.currentStream = nil
+                self.captureOutput = nil
+            }
+        }
+
         isCapturing = false
         print("⏹️ Stopped screen capturing")
     }
@@ -80,11 +91,11 @@ class ScreenCaptureManager: NSObject, ObservableObject {
 
         // Priority 1: Try to capture focused window
         if let focusedWindow = getFocusedWindow(from: availableContent) {
-            await captureWindow(focusedWindow, context: context)
+            await setupStreamIfNeeded(for: focusedWindow, context: context)
         } else {
             // Fallback: Capture main display
             if let mainDisplay = availableContent.displays.first {
-                await captureDisplay(mainDisplay, context: context)
+                await setupStreamIfNeeded(for: mainDisplay, context: context)
             }
         }
     }
@@ -112,80 +123,100 @@ class ScreenCaptureManager: NSObject, ObservableObject {
         )
     }
 
-    // MARK: - Window Capture
+    // MARK: - Stable Stream Management
 
-    private func captureWindow(_ window: SCWindow, context: CaptureContext) async {
+    private func setupStreamIfNeeded(for window: SCWindow, context: CaptureContext) async {
+        // Stop existing stream if different window
+        if currentStream != nil {
+            try? await currentStream?.stopCapture()
+            currentStream = nil
+            captureOutput = nil
+        }
+
         let config = SCStreamConfiguration()
-        config.width = Int(window.frame.width)
-        config.height = Int(window.frame.height)
+        config.width = min(Int(window.frame.width), 1920) // Limit resolution
+        config.height = min(Int(window.frame.height), 1080)
         config.capturesAudio = false
-        config.sampleRate = 2 // 2 FPS
-        config.minimumFrameInterval = CMTime(value: 1, timescale: 2)
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 2) // 2 FPS
 
         let filter = SCContentFilter(desktopIndependentWindow: window)
 
         do {
-            let stream = SCStream(filter: filter, configuration: config, delegate: nil)
+            let stream = SCStream(filter: filter, configuration: config, delegate: self)
 
-            // Add stream output
-            try stream.addStreamOutput(CaptureOutput(onFrame: { [weak self] cgImage in
-                var updatedContext = context
+            // Create persistent output handler
+            let output = CaptureOutput(onFrame: { [weak self] cgImage in
+                let currentContext = self?.getCurrentContext() ?? context
+                var updatedContext = currentContext
                 updatedContext.captureType = .window(window)
                 updatedContext.captureArea = window.frame
                 self?.onScreenCaptured?(cgImage, updatedContext)
-            }), type: .screen, sampleHandlerQueue: DispatchQueue.global(qos: .userInitiated))
+            })
 
+            try stream.addStreamOutput(output, type: .screen, sampleHandlerQueue: DispatchQueue.global(qos: .userInitiated))
             try await stream.startCapture()
 
-            // Stop after capturing one frame
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                Task {
-                    try? await stream.stopCapture()
-                }
-            }
+            // Store references to keep them alive
+            self.currentStream = stream
+            self.captureOutput = output
 
         } catch {
-            print("❌ Window capture failed: \(error)")
+            print("❌ Stream setup failed: \(error)")
         }
     }
 
-    // MARK: - Display Capture
+    private func setupStreamIfNeeded(for display: SCDisplay, context: CaptureContext) async {
+        // Stop existing stream if different display
+        if currentStream != nil {
+            try? await currentStream?.stopCapture()
+            currentStream = nil
+            captureOutput = nil
+        }
 
-    private func captureDisplay(_ display: SCDisplay, context: CaptureContext) async {
         let config = SCStreamConfiguration()
-        config.width = display.width
-        config.height = display.height
+        config.width = min(display.width, 1920) // Limit resolution
+        config.height = min(display.height, 1080)
         config.capturesAudio = false
-        config.sampleRate = 2
-        config.minimumFrameInterval = CMTime(value: 1, timescale: 2)
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 2) // 2 FPS
 
         let filter = SCContentFilter(display: display, excludingWindows: [])
 
         do {
-            let stream = SCStream(filter: filter, configuration: config, delegate: nil)
+            let stream = SCStream(filter: filter, configuration: config, delegate: self)
 
-            try stream.addStreamOutput(CaptureOutput(onFrame: { [weak self] cgImage in
-                var updatedContext = context
+            // Create persistent output handler
+            let output = CaptureOutput(onFrame: { [weak self] cgImage in
+                let currentContext = self?.getCurrentContext() ?? context
+                var updatedContext = currentContext
                 updatedContext.captureType = .display(display)
                 updatedContext.captureArea = CGRect(x: 0, y: 0, width: display.width, height: display.height)
                 self?.onScreenCaptured?(cgImage, updatedContext)
-            }), type: .screen, sampleHandlerQueue: DispatchQueue.global(qos: .userInitiated))
+            })
 
+            try stream.addStreamOutput(output, type: .screen, sampleHandlerQueue: DispatchQueue.global(qos: .userInitiated))
             try await stream.startCapture()
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                Task {
-                    try? await stream.stopCapture()
-                }
-            }
+            // Store references to keep them alive
+            self.currentStream = stream
+            self.captureOutput = output
 
         } catch {
-            print("❌ Display capture failed: \(error)")
+            print("❌ Stream setup failed: \(error)")
         }
     }
 
     deinit {
         stopCapturing()
+    }
+
+    // MARK: - SCStreamDelegate
+
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
+        print("⚠️ Stream stopped with error: \(error)")
+        // Auto-restart stream if needed
+        Task {
+            await self.updateAvailableContent()
+        }
     }
 }
 

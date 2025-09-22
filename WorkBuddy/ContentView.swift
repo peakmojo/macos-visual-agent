@@ -525,35 +525,62 @@ struct ContentView: View {
         )
     }
     
-    // Sample tasks data
+    // Sample tasks data - 5-day UX Designer timeline (Today is Day 4)
     var sampleTasks: [Task] {
         [
+            // Day 1 - Onboarding (Completed)
             Task(
-                id: "1",
-                title: "Redesign Signup Flow", 
-                deadline: "60 min",
-                goal: "Improve mobile UX + 3-step signup",
-                founderChallenge: "Why this layout? Send Loom in 5 min.",
-                deliverables: ["Figma link", "Loom link"],
+                id: "day1-1",
+                title: "Day 1: Setup & Company Walkthrough", 
+                deadline: "Completed",
+                goal: "Get familiar with design system, brand guidelines, and team workflow",
+                founderChallenge: "What's your first impression of our design approach?",
+                deliverables: ["Slack intro", "Design system review", "Team meet & greet"],
+                status: .completed
+            ),
+            
+            // Day 2 - Learning (Completed)
+            Task(
+                id: "day2-1",
+                title: "Day 2: Analyze Current User Flows",
+                deadline: "Completed", 
+                goal: "Audit existing signup and onboarding experiences across web/mobile",
+                founderChallenge: "What are the top 3 friction points you identified?",
+                deliverables: ["User flow audit doc", "Heuristic evaluation", "Quick wins list"],
+                status: .completed
+            ),
+            
+            // Day 3 - First Real Task (Completed)
+            Task(
+                id: "day3-1",
+                title: "Day 3: Redesign Mobile Onboarding",
+                deadline: "Completed",
+                goal: "Create improved 3-step mobile onboarding flow with 40% better conversion",
+                founderChallenge: "Walk me through your design decisions. Why these specific steps?",
+                deliverables: ["Figma mockups", "Prototype link", "Design rationale doc"],
+                status: .completed
+            ),
+            
+            // Day 4 - Today (Active)
+            Task(
+                id: "day4-1",
+                title: "Day 4: Dashboard UX Overhaul",
+                deadline: "6 hours",
+                goal: "Redesign main dashboard to reduce cognitive load and improve task completion by 25%",
+                founderChallenge: "How will you validate these UX improvements? Show me your testing plan.",
+                deliverables: ["High-fidelity designs", "Interactive prototype", "User testing plan"],
                 status: .active
             ),
+            
+            // Day 5 - Tomorrow (Challenging)
             Task(
-                id: "2",
-                title: "Code Review Dashboard",
-                deadline: "45 min", 
-                goal: "Build responsive component with React",
-                founderChallenge: "Show me your testing approach",
-                deliverables: ["GitHub PR", "Test coverage"],
+                id: "day5-1",
+                title: "Day 5: Cross-Platform Design System",
+                deadline: "8 hours",
+                goal: "Establish scalable design system patterns that work across web, mobile, and tablet",
+                founderChallenge: "Convince me why your component architecture will scale as we grow from 10k to 1M users.",
+                deliverables: ["Component library", "Design tokens", "Implementation guide", "Scalability presentation"],
                 status: .pending
-            ),
-            Task(
-                id: "3",
-                title: "API Integration",
-                deadline: "30 min",
-                goal: "Connect payment gateway endpoints",
-                founderChallenge: "Handle edge cases and errors",
-                deliverables: ["Working demo", "Error handling"],
-                status: .completed
             )
         ]
     }

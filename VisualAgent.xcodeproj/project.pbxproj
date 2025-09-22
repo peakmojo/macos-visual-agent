@@ -12,6 +12,11 @@
 		A2222222222222222222222A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2222222222222222222222B /* ContentView.swift */; };
 		A3333333333333333333333A /* ScreenMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3333333333333333333333B /* ScreenMonitor.swift */; };
 		A4444444444444444444444A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4444444444444444444444B /* DatabaseManager.swift */; };
+		C1111111111111111111111A /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1111111111111111111111B /* ScreenCaptureManager.swift */; };
+		C2222222222222222222222A /* VisionTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2222222222222222222222B /* VisionTextExtractor.swift */; };
+		C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3333333333333333333333B /* AccessibilityAnalyzer.swift */; };
+		C4444444444444444444444A /* ContextStreamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4444444444444444444444B /* ContextStreamManager.swift */; };
+		C5555555555555555555555A /* ActionWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5555555555555555555555B /* ActionWindowView.swift */; };
 		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +28,11 @@
 		A2222222222222222222222B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A3333333333333333333333B /* ScreenMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenMonitor.swift; sourceTree = "<group>"; };
 		A4444444444444444444444B /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
+		C1111111111111111111111B /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
+		C2222222222222222222222B /* VisionTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionTextExtractor.swift; sourceTree = "<group>"; };
+		C3333333333333333333333B /* AccessibilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAnalyzer.swift; sourceTree = "<group>"; };
+		C4444444444444444444444B /* ContextStreamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextStreamManager.swift; sourceTree = "<group>"; };
+		C5555555555555555555555B /* ActionWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionWindowView.swift; sourceTree = "<group>"; };
 		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
 		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -61,6 +71,11 @@
 				A2222222222222222222222B /* ContentView.swift */,
 				A3333333333333333333333B /* ScreenMonitor.swift */,
 				A4444444444444444444444B /* DatabaseManager.swift */,
+				C1111111111111111111111B /* ScreenCaptureManager.swift */,
+				C2222222222222222222222B /* VisionTextExtractor.swift */,
+				C3333333333333333333333B /* AccessibilityAnalyzer.swift */,
+				C4444444444444444444444B /* ContextStreamManager.swift */,
+				C5555555555555555555555B /* ActionWindowView.swift */,
 				1C99563474D24779AEF138B9 /* bary_headshot.jpeg */,
 				2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */,
 				A5555555555555555555555B /* VisualAgent.entitlements */,
@@ -143,6 +158,11 @@
 				A3333333333333333333333A /* ScreenMonitor.swift in Sources */,
 				A4444444444444444444444A /* DatabaseManager.swift in Sources */,
 				A1111111111111111111111A /* VisualAgentApp.swift in Sources */,
+				C1111111111111111111111A /* ScreenCaptureManager.swift in Sources */,
+				C2222222222222222222222A /* VisionTextExtractor.swift in Sources */,
+				C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */,
+				C4444444444444444444444A /* ContextStreamManager.swift in Sources */,
+				C5555555555555555555555A /* ActionWindowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

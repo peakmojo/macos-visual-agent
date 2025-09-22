@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var showTaskTimeline = false
     @State private var activityFeed: [ActivityItem] = []
     @State private var showTrialReport = false
+    @State private var showActionWindow = false
     @State private var currentWorkflowStep: WorkflowStep = .taskAssignment
     @State private var workflowTimer: Timer?
     @State private var buddies = [
@@ -120,6 +121,35 @@ struct ContentView: View {
                 }
             }
         )
+        .overlay(
+            // Action Window overlay
+            Group {
+                if showActionWindow {
+                    HStack {
+                        ActionWindowView()
+                            .frame(width: 400, height: 600)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.98))
+                                    .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+                            )
+                            .transition(.move(edge: .leading).combined(with: .opacity))
+                        Spacer()
+                    }
+                    .padding(.leading, 20)
+                    .onTapGesture {
+                        // Prevent closing when tapping inside
+                    }
+                    .background(
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                showActionWindow = false
+                            }
+                    )
+                }
+            }
+        )
     }
     
     
@@ -201,9 +231,9 @@ struct ContentView: View {
                         .monospacedDigit()
                 }
                 
-                Button(action: { 
+                Button(action: {
                     withAnimation(.easeInOut(duration: 0.25)) {
-                        showTaskTimeline.toggle() 
+                        showTaskTimeline.toggle()
                     }
                 }) {
                     Image(systemName: showTaskTimeline ? "list.bullet.rectangle.fill" : "list.bullet.rectangle")
@@ -212,6 +242,14 @@ struct ContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Toggle Task Timeline")
+
+                Button(action: { showActionWindow.toggle() }) {
+                    Image(systemName: showActionWindow ? "eye.fill" : "eye")
+                        .foregroundColor(showActionWindow ? .green : .black.opacity(0.7))
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Toggle Action Window")
                 
                 Button(action: { isExpanded.toggle() }) {
                     Image(systemName: "chevron.down")
@@ -526,10 +564,10 @@ struct ContentView: View {
     }
     
     // Sample tasks data - 5-day UX Designer timeline (Today is Day 4)
-    var sampleTasks: [Task] {
+    var sampleTasks: [WorkTask] {
         [
             // Day 1 - Onboarding (Completed)
-            Task(
+            WorkTask(
                 id: "day1-1",
                 title: "Day 1: Setup & Company Walkthrough", 
                 deadline: "Completed",
@@ -540,7 +578,7 @@ struct ContentView: View {
             ),
             
             // Day 2 - Learning (Completed)
-            Task(
+            WorkTask(
                 id: "day2-1",
                 title: "Day 2: Analyze Current User Flows",
                 deadline: "Completed", 
@@ -551,7 +589,7 @@ struct ContentView: View {
             ),
             
             // Day 3 - First Real Task (Completed)
-            Task(
+            WorkTask(
                 id: "day3-1",
                 title: "Day 3: Redesign Mobile Onboarding",
                 deadline: "Completed",
@@ -562,7 +600,7 @@ struct ContentView: View {
             ),
             
             // Day 4 - Today (Active)
-            Task(
+            WorkTask(
                 id: "day4-1",
                 title: "Day 4: Dashboard UX Overhaul",
                 deadline: "6 hours",
@@ -573,7 +611,7 @@ struct ContentView: View {
             ),
             
             // Day 5 - Tomorrow (Challenging)
-            Task(
+            WorkTask(
                 id: "day5-1",
                 title: "Day 5: Cross-Platform Design System",
                 deadline: "8 hours",
@@ -1034,7 +1072,7 @@ struct Buddy: Identifiable {
     var callState: CallState
 }
 
-struct Task: Identifiable {
+struct WorkTask: Identifiable {
     let id: String
     let title: String
     let deadline: String
@@ -1235,7 +1273,7 @@ struct ActivityFeedRow: View {
 }
 
 struct TaskCard: View {
-    let task: Task
+    let task: WorkTask
     @State private var isExpanded = false
     
     var body: some View {

@@ -32,5 +32,7 @@
 	<string>Visual Agent needs microphone access for productivity monitoring features.</string>
 	<key>NSScreenCaptureDescription</key>
 	<string>Visual Agent needs screen recording access to monitor productivity and share with your visual agents.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Visual Agent needs accessibility access to analyze UI elements and provide intelligent screen understanding.</string>
 </dict>
 </plist>

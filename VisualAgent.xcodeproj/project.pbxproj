@@ -17,8 +17,6 @@
 		C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3333333333333333333333B /* AccessibilityAnalyzer.swift */; };
 		C4444444444444444444444A /* ContextStreamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4444444444444444444444B /* ContextStreamManager.swift */; };
 		C5555555555555555555555A /* ActionWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5555555555555555555555B /* ActionWindowView.swift */; };
-		C6666666666666666666666A /* CoreMLScreenDescriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6666666666666666666666B /* CoreMLScreenDescriber.swift */; };
-		C7777777777777777777777A /* TestCoreMLIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7777777777777777777777B /* TestCoreMLIntegration.swift */; };
 		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
 /* End PBXBuildFile section */
 
@@ -35,8 +33,6 @@
 		C3333333333333333333333B /* AccessibilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAnalyzer.swift; sourceTree = "<group>"; };
 		C4444444444444444444444B /* ContextStreamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextStreamManager.swift; sourceTree = "<group>"; };
 		C5555555555555555555555B /* ActionWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionWindowView.swift; sourceTree = "<group>"; };
-		C6666666666666666666666B /* CoreMLScreenDescriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLScreenDescriber.swift; sourceTree = "<group>"; };
-		C7777777777777777777777B /* TestCoreMLIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCoreMLIntegration.swift; sourceTree = "<group>"; };
 		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
 		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -80,8 +76,6 @@
 				C3333333333333333333333B /* AccessibilityAnalyzer.swift */,
 				C4444444444444444444444B /* ContextStreamManager.swift */,
 				C5555555555555555555555B /* ActionWindowView.swift */,
-				C6666666666666666666666B /* CoreMLScreenDescriber.swift */,
-				C7777777777777777777777B /* TestCoreMLIntegration.swift */,
 				1C99563474D24779AEF138B9 /* bary_headshot.jpeg */,
 				2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */,
 				A5555555555555555555555B /* VisualAgent.entitlements */,
@@ -169,8 +163,6 @@
 				C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */,
 				C4444444444444444444444A /* ContextStreamManager.swift in Sources */,
 				C5555555555555555555555A /* ActionWindowView.swift in Sources */,
-				C6666666666666666666666A /* CoreMLScreenDescriber.swift in Sources */,
-				C7777777777777777777777A /* TestCoreMLIntegration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -46,44 +46,15 @@ struct ActionWindowView: View {
 
             Spacer()
 
-            // Status indicators
-            VStack(alignment: .trailing, spacing: 4) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(contextManager.isStreaming ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
+            // Status indicator
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(contextManager.isStreaming ? Color.green : Color.red)
+                    .frame(width: 8, height: 8)
 
-                    Text(contextManager.isStreaming ? "Live" : "Offline")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.black.opacity(0.7))
-                }
-
-                // CoreML Status with detailed info
-                if #available(macOS 12.0, *) {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 10))
-                                .foregroundColor(getCoreMLStatusColor())
-
-                            Text("CoreML")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.black.opacity(0.6))
-                        }
-
-                        // CoreML stats
-                        let stats = contextManager.coreMLStats
-                        Text("\(Int(stats.successRate * 100))% (\(stats.successfulUses)/\(stats.totalAttempts))")
-                            .font(.system(size: 8))
-                            .foregroundColor(.black.opacity(0.5))
-
-                        if !stats.lastReason.isEmpty && stats.lastReason != "not attempted" {
-                            Text(stats.lastReason)
-                                .font(.system(size: 8))
-                                .foregroundColor(getReasonColor(stats.lastReason))
-                        }
-                    }
-                }
+                Text(contextManager.isStreaming ? "Live" : "Offline")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.black.opacity(0.7))
             }
 
         }
@@ -187,29 +158,6 @@ struct ActionWindowView: View {
     }
 
     // MARK: - Helper Functions
-
-    @available(macOS 12.0, *)
-    private func getCoreMLStatusColor() -> Color {
-        let stats = contextManager.coreMLStats
-        if stats.isCurrentlyWorking {
-            return .green // Green when CoreML is actively working
-        } else if stats.lastReason == "timeout" {
-            return .orange // Orange when skipped due to performance
-        } else if stats.lastReason == "unavailable" {
-            return .red // Red when unavailable
-        } else {
-            return .blue // Blue when available but not used recently
-        }
-    }
-
-    private func getReasonColor(_ reason: String) -> Color {
-        switch reason {
-        case "success": return .green
-        case "timeout": return .orange
-        case "unavailable": return .red
-        default: return .gray
-        }
-    }
 
     private func copyTextToClipboard(_ text: String) {
         let pasteboard = NSPasteboard.general

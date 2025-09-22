@@ -6,20 +6,17 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 
 - **Overlay Interface**: Minimal, always-on-top interface that doesn't interfere with work
 - **Screen Monitoring**: Captures screenshots, mouse movements, and keystrokes (with permissions)
-- **AI-Powered Screen Analysis**: CoreML-enhanced screen understanding with contextual insights
 - **Buddy System**: Shows team members and their current status (watching, taking a break, disabled)
 - **Real-time Status**: Visual indicators for each team member's activity
-- **Smart Context Detection**: Automatically detects development, web browsing, design work, and general activities
 - **Database Persistence**: SQLite database for storing buddy information and activity logs
 - **Privacy Controls**: Individual buddies can be disabled from monitoring
 
 ## Requirements
 
-- macOS 12.0 or later (macOS 12.3+ recommended for full ScreenCaptureKit support)
+- macOS 13.0 or later
 - Xcode 14.0 or later (for building)
 - Screen Recording permission
 - Accessibility permission (for keystroke monitoring)
-- CoreML support (built into macOS 12.0+)
 
 ## Building the App
 
@@ -65,23 +62,15 @@ A macOS desktop overlay app that monitors screen activity and allows team member
 
 ```
 visual-agent/
-├── VisualAgentApp.swift         # Main app entry point
-├── ContentView.swift            # Main UI components
-├── ScreenMonitor.swift          # Basic screen monitoring functionality
-├── ScreenCaptureManager.swift   # Advanced screen capture using ScreenCaptureKit
-├── VisionTextExtractor.swift    # Text extraction using Vision framework
-├── AccessibilityAnalyzer.swift  # UI element analysis
-├── ContextStreamManager.swift   # Main screen analysis coordinator
-├── CoreMLScreenDescriber.swift  # AI-powered screen understanding
-├── ActionWindowView.swift       # Live screen analysis display
-├── TestCoreMLIntegration.swift  # CoreML integration tests
-├── DatabaseManager.swift        # SQLite database operations
-├── VisualAgent.xcodeproj/       # Xcode project files
-├── VisualAgent.entitlements     # App permissions
-├── Info.plist                  # App configuration
-├── COREML_INTEGRATION_GUIDE.md # CoreML setup and usage guide
-├── build.sh                    # Build script
-└── README.md                   # This file
+├── VisualAgentApp.swift    # Main app entry point
+├── ContentView.swift       # Main UI components
+├── ScreenMonitor.swift     # Screen monitoring functionality
+├── DatabaseManager.swift   # SQLite database operations
+├── VisualAgent.xcodeproj/  # Xcode project files
+├── VisualAgent.entitlements # App permissions
+├── Info.plist             # App configuration
+├── build.sh               # Build script
+└── README.md              # This file
 ```
 
 ## Privacy & Security

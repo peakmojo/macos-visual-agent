@@ -7,7 +7,7 @@ private let kAXApplicationRole = "AXApplication" as CFString
 private let kAXWindowRole = "AXWindow" as CFString
 private let kAXButtonRole = "AXButton" as CFString
 
-class AccessibilityAnalyzer: ObservableObject, @unchecked Sendable {
+class AccessibilityAnalyzer: ObservableObject {
 
     // MARK: - Permission Management
 

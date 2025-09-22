@@ -87,28 +87,56 @@ class ContextStreamManager: ObservableObject {
             return
         }
 
-        // Process concurrently
-        async let textElements = visionTextExtractor.extractText(from: image)
+        // Ensure processing doesn't exceed 1 second to maintain 1 FPS
+        let maxProcessingTime: TimeInterval = 0.9 // Leave 0.1s buffer
+
+        // Process concurrently to maintain 1 FPS
+        async let textStrings = visionTextExtractor.extractText(from: image)
         async let uiElements = extractUIElements(from: context)
+        async let windowStructure = extractWindowStructure()
 
-        // Wait for both to complete
-        let extractedText = await textElements
+        // Wait for all to complete with timeout handling
+        let extractedText = await textStrings
         let extractedUI = await uiElements
+        let extractedWindows = await windowStructure
 
-        // Fuse data
-        let fusedElements = fuseTextAndUIElements(
-            textElements: extractedText,
-            uiElements: extractedUI,
-            mousePosition: context.mousePosition
-        )
+        // Check if we're approaching timeout
+        let currentTime = CFAbsoluteTimeGetCurrent()
+        let elapsedTime = currentTime - startTime
 
-        // Create screen context
+        let screenDescription: String
+        if elapsedTime < maxProcessingTime {
+            // Generate screen description with already extracted text and windows
+            screenDescription = await visionTextExtractor.generateScreenDescriptionWithData(
+                from: image,
+                textStrings: extractedText,
+                windowStructure: extractedWindows
+            )
+        } else {
+            // Use simple description to maintain 1 FPS
+            let imageSize = CGSize(width: image.width, height: image.height)
+            screenDescription = """
+            SCREEN CONTENT ANALYSIS (Fast Mode)
+            ===================================
+
+            Display: \(Int(imageSize.width)) × \(Int(imageSize.height)) pixels
+            Time: \(Date().formatted(.dateTime.hour().minute().second()))
+            Text Elements: \(extractedText.count)
+            UI Elements: \(extractedUI.count)
+
+            TEXT CONTENT:
+            \(extractedText.joined(separator: "\n"))
+            """
+        }
+
+        // Create simplified screen context
         let screenContext = ScreenContext(
             timestamp: context.timestamp,
             captureContext: context,
-            textElements: extractedText,
+            screenDescription: screenDescription,
+            textStrings: extractedText,
             uiElements: extractedUI,
-            fusedElements: fusedElements,
+            windowStructure: extractedWindows,
             screenshot: image
         )
 
@@ -131,107 +159,14 @@ class ContextStreamManager: ObservableObject {
         return await accessibilityAnalyzer.extractUIElements(from: bundleID)
     }
 
-    // MARK: - Data Fusion
-
-    private func fuseTextAndUIElements(
-        textElements: [TextElement],
-        uiElements: [UIElement],
-        mousePosition: CGPoint
-    ) -> [FusedElement] {
-        var fusedElements: [FusedElement] = []
-
-        // Correlate text with UI elements based on spatial proximity
-        for uiElement in uiElements.filter({ $0.isVisible }) {
-            let nearbyText = findNearbyText(for: uiElement, in: textElements)
-            let distanceToMouse = distance(from: mousePosition, to: uiElement.frame)
-
-            let fusedElement = FusedElement(
-                uiElement: uiElement,
-                associatedText: nearbyText,
-                distanceToMouse: distanceToMouse,
-                interactionProbability: calculateInteractionProbability(
-                    uiElement: uiElement,
-                    nearbyText: nearbyText,
-                    mouseDistance: distanceToMouse
-                )
-            )
-
-            fusedElements.append(fusedElement)
-        }
-
-        // Add standalone text elements (not associated with UI)
-        for textElement in textElements {
-            if !fusedElements.contains(where: { element in
-                element.associatedText.contains { text in text.id == textElement.id }
-            }) {
-                let distanceToMouse = distance(from: mousePosition, to: textElement.boundingBox)
-
-                let fusedElement = FusedElement(
-                    uiElement: nil,
-                    associatedText: [textElement],
-                    distanceToMouse: distanceToMouse,
-                    interactionProbability: textElement.isPossibleButton ? 0.6 : 0.2
-                )
-
-                fusedElements.append(fusedElement)
-            }
-        }
-
-        return fusedElements.sorted { $0.interactionProbability > $1.interactionProbability }
-    }
-
-    private func findNearbyText(for uiElement: UIElement, in textElements: [TextElement]) -> [TextElement] {
-        let threshold: CGFloat = 50.0
-
-        return textElements.filter { textElement in
-            let distance = minimumDistance(between: uiElement.frame, and: textElement.boundingBox)
-            return distance <= threshold
+    private func extractWindowStructure() async -> WindowStructure {
+        if #available(macOS 12.3, *) {
+            return await screenCaptureManager?.getWindowStructure() ?? WindowStructure(displays: [], applications: [], windows: [])
+        } else {
+            return WindowStructure(displays: [], applications: [], windows: [])
         }
     }
 
-    private func calculateInteractionProbability(
-        uiElement: UIElement?,
-        nearbyText: [TextElement],
-        mouseDistance: CGFloat
-    ) -> Double {
-        var probability: Double = 0.0
-
-        // Base probability from UI element type
-        if let ui = uiElement {
-            switch ui.elementType {
-            case .button: probability += 0.8
-            case .textInput: probability += 0.7
-            case .checkbox, .radioButton: probability += 0.6
-            case .dropdown, .menu: probability += 0.5
-            case .link: probability += 0.4
-            default: probability += 0.2
-            }
-
-            // Enabled state
-            if ui.enabled {
-                probability += 0.1
-            } else {
-                probability -= 0.3
-            }
-        }
-
-        // Text analysis boost
-        for text in nearbyText {
-            if text.isPossibleButton {
-                probability += 0.3
-            }
-            if text.confidence > 0.9 {
-                probability += 0.1
-            }
-        }
-
-        // Mouse proximity (closer = higher probability)
-        let maxDistance: CGFloat = 200.0
-        let proximityBoost = max(0, (maxDistance - mouseDistance) / maxDistance) * 0.2
-        probability += proximityBoost
-
-        return min(1.0, max(0.0, probability))
-    }
 
     // MARK: - Caching
 
@@ -291,46 +226,41 @@ class ContextStreamManager: ObservableObject {
 struct ScreenContext {
     let timestamp: Date
     let captureContext: CaptureContext
-    let textElements: [TextElement]
+    let screenDescription: String
+    let textStrings: [String]
     let uiElements: [UIElement]
-    let fusedElements: [FusedElement]
+    let windowStructure: WindowStructure
     let screenshot: CGImage
 
     var totalElements: Int {
-        return textElements.count + uiElements.count
-    }
-
-    var topInteractionCandidates: [FusedElement] {
-        return Array(fusedElements.prefix(5))
+        return textStrings.count + uiElements.count + windowStructure.windows.count
     }
 }
 
-struct FusedElement: Identifiable {
-    let id = UUID()
-    let uiElement: UIElement?
-    let associatedText: [TextElement]
-    let distanceToMouse: CGFloat
-    let interactionProbability: Double
+struct WindowStructure {
+    let displays: [DisplayInfo]
+    let applications: [ApplicationInfo]
+    let windows: [WindowInfo]
+}
 
-    var displayText: String {
-        if let ui = uiElement {
-            return ui.displayText
-        } else if let firstText = associatedText.first {
-            return firstText.text
-        } else {
-            return "Unknown Element"
-        }
-    }
+struct DisplayInfo {
+    let id: UInt32
+    let width: Int
+    let height: Int
+}
 
-    var frame: CGRect {
-        if let ui = uiElement {
-            return ui.frame
-        } else if let firstText = associatedText.first {
-            return firstText.boundingBox
-        } else {
-            return .zero
-        }
-    }
+struct ApplicationInfo {
+    let bundleIdentifier: String
+    let applicationName: String
+    let processIdentifier: pid_t
+}
+
+struct WindowInfo {
+    let windowID: UInt32
+    let title: String?
+    let frame: CGRect
+    let isOnScreen: Bool
+    let owningApplicationBundleID: String?
 }
 
 struct CachedContext {

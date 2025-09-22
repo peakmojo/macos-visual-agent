@@ -105,9 +105,9 @@ struct ActionWindowView: View {
             LazyVStack(spacing: 8) {
                 switch selectedTab {
                 case 0:
-                    fusedElementsView
+                    screenDescriptionView
                 case 1:
-                    textElementsView
+                    textStringsView
                 case 2:
                     uiElementsView
                 default:
@@ -120,30 +120,48 @@ struct ActionWindowView: View {
         .frame(maxHeight: 400)
     }
 
-    // MARK: - Fused Elements View
+    // MARK: - Screen Description View
 
-    private var fusedElementsView: some View {
+    private var screenDescriptionView: some View {
         Group {
             if let context = contextManager.currentContext {
-                ForEach(context.fusedElements.prefix(10), id: \.id) { element in
-                    FusedElementCard(element: element)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(context.screenDescription)
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.8))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white)
+                        )
                 }
             } else {
-                noDataView("No fused elements detected")
+                noDataView("No screen capture available")
             }
         }
     }
 
-    // MARK: - Text Elements View
+    // MARK: - Text Strings View
 
-    private var textElementsView: some View {
+    private var textStringsView: some View {
         Group {
-            if let context = contextManager.currentContext, !context.textElements.isEmpty {
-                ForEach(context.textElements.prefix(15), id: \.id) { textElement in
-                    TextElementCard(textElement: textElement)
+            if let context = contextManager.currentContext, !context.textStrings.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(context.textStrings.joined(separator: "\n"))
+                        .font(.system(size: 12))
+                        .foregroundColor(.black.opacity(0.8))
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white)
+                        )
                 }
             } else {
-                noDataView("No text elements detected")
+                noDataView("No text detected")
             }
         }
     }
@@ -208,7 +226,7 @@ struct ActionWindowView: View {
 
     private func tabIcon(for index: Int) -> String {
         switch index {
-        case 0: return "link"
+        case 0: return "tv"
         case 1: return "textformat"
         case 2: return "rectangle.3.offgrid"
         default: return "questionmark"
@@ -217,7 +235,7 @@ struct ActionWindowView: View {
 
     private func tabTitle(for index: Int) -> String {
         switch index {
-        case 0: return "Smart"
+        case 0: return "Screen"
         case 1: return "Text"
         case 2: return "UI"
         default: return "Unknown"
@@ -235,116 +253,6 @@ struct ActionWindowView: View {
 }
 
 // MARK: - Element Cards
-
-struct FusedElementCard: View {
-    let element: FusedElement
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                // Interaction probability indicator
-                Circle()
-                    .fill(probabilityColor)
-                    .frame(width: 8, height: 8)
-
-                Text(element.displayText)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.black.opacity(0.8))
-                    .lineLimit(1)
-
-                Spacer()
-
-                Text("\(Int(element.interactionProbability * 100))%")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(probabilityColor)
-            }
-
-            HStack(spacing: 8) {
-                if let ui = element.uiElement {
-                    Label(ui.elementType.rawValue, systemImage: ui.elementType.icon)
-                        .font(.system(size: 10))
-                        .foregroundColor(.blue)
-                }
-
-                if !element.associatedText.isEmpty {
-                    Label("\(element.associatedText.count) text", systemImage: "textformat")
-                        .font(.system(size: 10))
-                        .foregroundColor(.green)
-                }
-
-                Spacer()
-
-                Text("📍 \(Int(element.distanceToMouse))px")
-                    .font(.system(size: 10))
-                    .foregroundColor(.black.opacity(0.5))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(probabilityColor.opacity(0.3), lineWidth: 1)
-                )
-        )
-    }
-
-    private var probabilityColor: Color {
-        if element.interactionProbability > 0.7 {
-            return .green
-        } else if element.interactionProbability > 0.4 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
-}
-
-struct TextElementCard: View {
-    let textElement: TextElement
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(textElement.text)
-                    .font(.system(size: 12))
-                    .foregroundColor(.black.opacity(0.8))
-                    .lineLimit(2)
-
-                Spacer()
-
-                Text(textElement.language.displayName)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(.blue.opacity(0.1)))
-            }
-
-            HStack {
-                Text("Confidence: \(Int(textElement.confidence * 100))%")
-                    .font(.system(size: 10))
-                    .foregroundColor(.black.opacity(0.5))
-
-                Spacer()
-
-                if textElement.isPossibleButton {
-                    Text("Button?")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.orange)
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white)
-        )
-    }
-}
 
 struct UIElementCard: View {
     let uiElement: UIElement

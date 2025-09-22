@@ -11,7 +11,7 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
     private var captureOutput: CaptureOutput?
 
     // Configuration
-    private let captureInterval: TimeInterval = 0.5 // 2 FPS
+    private let captureInterval: TimeInterval = 1.0 // 1 FPS
     private var captureTimer: Timer?
 
     // Capture callbacks
@@ -89,14 +89,9 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
         // Get current context
         let context = getCurrentContext()
 
-        // Priority 1: Try to capture focused window
-        if let focusedWindow = getFocusedWindow(from: availableContent) {
-            await setupStreamIfNeeded(for: focusedWindow, context: context)
-        } else {
-            // Fallback: Capture main display
-            if let mainDisplay = availableContent.displays.first {
-                await setupStreamIfNeeded(for: mainDisplay, context: context)
-            }
+        // Always capture entire main display for comprehensive screen description
+        if let mainDisplay = availableContent.displays.first {
+            await setupStreamIfNeeded(for: mainDisplay, context: context)
         }
     }
 
@@ -137,7 +132,7 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
         config.width = min(Int(window.frame.width), 1920) // Limit resolution
         config.height = min(Int(window.frame.height), 1080)
         config.capturesAudio = false
-        config.minimumFrameInterval = CMTime(value: 1, timescale: 2) // 2 FPS
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 1) // 1 FPS
 
         let filter = SCContentFilter(desktopIndependentWindow: window)
 
@@ -177,9 +172,15 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
         config.width = min(display.width, 1920) // Limit resolution
         config.height = min(display.height, 1080)
         config.capturesAudio = false
-        config.minimumFrameInterval = CMTime(value: 1, timescale: 2) // 2 FPS
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 1) // 1 FPS
 
-        let filter = SCContentFilter(display: display, excludingWindows: [])
+        // Filter out Visual Agent windows
+        let visualAgentWindows = availableContent?.windows.filter { window in
+            window.owningApplication?.bundleIdentifier.contains("VisualAgent") == true ||
+            window.title?.contains("Visual Agent") == true
+        } ?? []
+
+        let filter = SCContentFilter(display: display, excludingWindows: visualAgentWindows)
 
         do {
             let stream = SCStream(filter: filter, configuration: config, delegate: self)
@@ -203,6 +204,61 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
         } catch {
             print("❌ Stream setup failed: \(error)")
         }
+    }
+
+    // MARK: - Window Structure Extraction
+
+    func getWindowStructure() async -> WindowStructure {
+        var content = availableContent
+        if content == nil {
+            await updateAvailableContent()
+            content = availableContent
+        }
+
+        guard let content = content else {
+            return WindowStructure(displays: [], applications: [], windows: [])
+        }
+
+        // Extract display information
+        let displays = content.displays.map { display in
+            DisplayInfo(
+                id: display.displayID,
+                width: display.width,
+                height: display.height
+            )
+        }
+
+        // Extract application information
+        let applications = content.applications.map { app in
+            ApplicationInfo(
+                bundleIdentifier: app.bundleIdentifier,
+                applicationName: app.applicationName,
+                processIdentifier: app.processID
+            )
+        }
+
+        // Extract window information (excluding Visual Agent)
+        let windows = content.windows.compactMap { window -> WindowInfo? in
+            // Filter out Visual Agent windows
+            if window.owningApplication?.bundleIdentifier.contains("VisualAgent") == true ||
+               window.title?.contains("Visual Agent") == true {
+                return nil
+            }
+
+            return WindowInfo(
+                windowID: window.windowID,
+                title: window.title,
+                frame: window.frame,
+                isOnScreen: window.isOnScreen,
+                owningApplicationBundleID: window.owningApplication?.bundleIdentifier
+            )
+        }
+
+        return WindowStructure(
+            displays: displays,
+            applications: applications,
+            windows: windows
+        )
     }
 
     deinit {

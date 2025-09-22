@@ -5,9 +5,9 @@ import AppKit
 
 class VisionTextExtractor: ObservableObject {
 
-    // MARK: - Text Recognition
+    // MARK: - Text Extraction
 
-    func extractText(from image: CGImage) async -> [TextElement] {
+    func extractText(from image: CGImage) async -> [String] {
         return await withCheckedContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error = error {
@@ -16,17 +16,14 @@ class VisionTextExtractor: ObservableObject {
                     return
                 }
 
-                let textElements = self.processTextObservations(request.results as? [VNRecognizedTextObservation] ?? [], imageSize: CGSize(width: image.width, height: image.height))
-                continuation.resume(returning: textElements)
+                let textStrings = self.processTextObservations(request.results as? [VNRecognizedTextObservation] ?? [])
+                continuation.resume(returning: textStrings)
             }
 
-            // Configure for mixed Chinese/English text
+            // Configure for English text only
             request.recognitionLevel = .accurate
-            request.recognitionLanguages = ["zh-Hans", "zh-Hant", "en-US"]
+            request.recognitionLanguages = ["en-US"]
             request.usesLanguageCorrection = true
-
-            // Enable automatic language detection
-            request.automaticallyDetectsLanguage = true
 
             let handler = VNImageRequestHandler(cgImage: image)
 
@@ -41,82 +38,213 @@ class VisionTextExtractor: ObservableObject {
         }
     }
 
-    private func processTextObservations(_ observations: [VNRecognizedTextObservation], imageSize: CGSize) -> [TextElement] {
-        var textElements: [TextElement] = []
+    private func processTextObservations(_ observations: [VNRecognizedTextObservation]) -> [String] {
+        var textStrings: [String] = []
 
         for observation in observations {
             guard let topCandidate = observation.topCandidates(1).first else { continue }
-
-            // Convert Vision coordinates to screen coordinates
-            let boundingBox = observation.boundingBox
-            let rect = VNImageRectForNormalizedRect(boundingBox, Int(imageSize.width), Int(imageSize.height))
-
-            let textElement = TextElement(
-                text: topCandidate.string,
-                confidence: topCandidate.confidence,
-                boundingBox: rect,
-                language: detectLanguage(topCandidate.string)
-            )
-
-            textElements.append(textElement)
+            textStrings.append(topCandidate.string)
         }
 
-        return textElements
+        return textStrings
     }
 
-    private func detectLanguage(_ text: String) -> TextLanguage {
-        let chinesePattern = try! NSRegularExpression(pattern: "[\\u4e00-\\u9fff]", options: [])
-        let chineseMatches = chinesePattern.numberOfMatches(in: text, options: [], range: NSRange(location: 0, length: text.count))
+    // MARK: - Screen Description
 
-        if chineseMatches > 0 {
-            return chineseMatches > text.count / 2 ? .chinese : .mixed
-        } else {
-            return .english
+    func generateScreenDescription(from image: CGImage) async -> String {
+        let imageSize = CGSize(width: image.width, height: image.height)
+        let textStrings = await extractText(from: image)
+        let textRectangles = await detectTextRegions(from: image)
+
+        // Create comprehensive screen description
+        var description = """
+        SCREEN CONTENT ANALYSIS
+        ======================
+
+        Display Information:
+        - Resolution: \(Int(imageSize.width)) × \(Int(imageSize.height)) pixels
+        - Capture Time: \(Date().formatted(.dateTime.hour().minute().second()))
+        - Content Type: Full desktop display
+
+        Text Content Analysis:
+        - Text Elements Found: \(textStrings.count)
+        - Text Regions Detected: \(textRectangles.count)
+
+        """
+
+        // Add all detected text content
+        if !textStrings.isEmpty {
+            description += """
+
+            DETECTED TEXT CONTENT:
+            =====================
+
+            """
+
+            for text in textStrings {
+                description += "\(text)\n"
+            }
+        }
+
+        // Add layout analysis
+        description += """
+
+        LAYOUT ANALYSIS:
+        ===============
+        - Screen has \(textRectangles.count) distinct text regions
+        - Text density: \(textRectangles.count > 0 ? String(format: "%.1f", Double(textStrings.count) / Double(textRectangles.count)) : "0") items per region
+
+        """
+
+        return description
+    }
+
+    func generateScreenDescriptionWithText(from image: CGImage, textStrings: [String]) async -> String {
+        let imageSize = CGSize(width: image.width, height: image.height)
+        let textRectangles = await detectTextRegions(from: image)
+
+        // Create comprehensive screen description using pre-extracted text
+        var description = """
+        SCREEN CONTENT ANALYSIS
+        ======================
+
+        Display Information:
+        - Resolution: \(Int(imageSize.width)) × \(Int(imageSize.height)) pixels
+        - Capture Time: \(Date().formatted(.dateTime.hour().minute().second()))
+        - Content Type: Full desktop display
+
+        Text Content Analysis:
+        - Text Elements Found: \(textStrings.count)
+        - Text Regions Detected: \(textRectangles.count)
+
+        """
+
+        // Add all detected text content
+        if !textStrings.isEmpty {
+            description += """
+
+            DETECTED TEXT CONTENT:
+            =====================
+
+            """
+
+            for text in textStrings {
+                description += "\(text)\n"
+            }
+        }
+
+        // Add layout analysis
+        description += """
+
+        LAYOUT ANALYSIS:
+        ===============
+        - Screen has \(textRectangles.count) distinct text regions
+        - Text density: \(textRectangles.count > 0 ? String(format: "%.1f", Double(textStrings.count) / Double(textRectangles.count)) : "0") items per region
+
+        """
+
+        return description
+    }
+
+    func generateScreenDescriptionWithData(from image: CGImage, textStrings: [String], windowStructure: WindowStructure) async -> String {
+        let imageSize = CGSize(width: image.width, height: image.height)
+        let textRectangles = await detectTextRegions(from: image)
+
+        // Create comprehensive screen description with window structure
+        var description = """
+        SCREEN CONTENT ANALYSIS
+        ======================
+
+        Display Information:
+        - Resolution: \(Int(imageSize.width)) × \(Int(imageSize.height)) pixels
+        - Capture Time: \(Date().formatted(.dateTime.hour().minute().second()))
+        - Content Type: Full desktop display
+
+        Window Structure:
+        - Displays: \(windowStructure.displays.count)
+        - Applications: \(windowStructure.applications.count)
+        - Visible Windows: \(windowStructure.windows.filter { $0.isOnScreen }.count)
+
+        Text Content Analysis:
+        - Text Elements Found: \(textStrings.count)
+        - Text Regions Detected: \(textRectangles.count)
+
+        """
+
+        // Add window hierarchy
+        if !windowStructure.windows.isEmpty {
+            description += """
+
+            WINDOW HIERARCHY:
+            ================
+
+            """
+
+            let visibleWindows = windowStructure.windows.filter { $0.isOnScreen }
+            for window in visibleWindows {
+                let appName = windowStructure.applications.first { app in
+                    app.bundleIdentifier == window.owningApplicationBundleID
+                }?.applicationName ?? "Unknown App"
+
+                description += "• \(appName): \(window.title ?? "Untitled") [\(Int(window.frame.width))×\(Int(window.frame.height))]\n"
+            }
+        }
+
+        // Add all detected text content
+        if !textStrings.isEmpty {
+            description += """
+
+            DETECTED TEXT CONTENT:
+            =====================
+
+            """
+
+            for text in textStrings {
+                description += "\(text)\n"
+            }
+        }
+
+        // Add layout analysis
+        description += """
+
+        LAYOUT ANALYSIS:
+        ===============
+        - Screen has \(textRectangles.count) distinct text regions
+        - Text density: \(textRectangles.count > 0 ? String(format: "%.1f", Double(textStrings.count) / Double(textRectangles.count)) : "0") items per region
+        - Active applications: \(windowStructure.applications.count)
+
+        """
+
+        return description
+    }
+
+    private func detectTextRegions(from image: CGImage) async -> [CGRect] {
+        return await withCheckedContinuation { continuation in
+            let request = VNDetectTextRectanglesRequest { request, error in
+                if let error = error {
+                    print("❌ Text region detection failed: \(error)")
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let rectangles = (request.results as? [VNTextObservation] ?? []).map { observation in
+                    let imageSize = CGSize(width: image.width, height: image.height)
+                    return VNImageRectForNormalizedRect(observation.boundingBox, Int(imageSize.width), Int(imageSize.height))
+                }
+                continuation.resume(returning: rectangles)
+            }
+
+            let handler = VNImageRequestHandler(cgImage: image)
+
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try handler.perform([request])
+                } catch {
+                    print("❌ Text region detection request failed: \(error)")
+                    continuation.resume(returning: [])
+                }
+            }
         }
     }
 }
 
-// MARK: - Supporting Types
-
-struct TextElement: Identifiable {
-    let id = UUID()
-    let text: String
-    let confidence: Float
-    let boundingBox: CGRect
-    let language: TextLanguage
-    let timestamp: Date = Date()
-
-    // Computed properties for UI analysis
-    var isPossibleButton: Bool {
-        return text.count < 30 &&
-               (text.contains("按钮") || text.contains("Button") ||
-                text.contains("确定") || text.contains("取消") ||
-                text.contains("OK") || text.contains("Cancel") ||
-                text.contains("Submit") || text.contains("提交"))
-    }
-
-    var isPossibleInputField: Bool {
-        return text.contains("输入") || text.contains("Input") ||
-               text.contains("搜索") || text.contains("Search") ||
-               text.contains("用户名") || text.contains("Username") ||
-               text.contains("密码") || text.contains("Password")
-    }
-
-    var isTitle: Bool {
-        return boundingBox.height > 20 && text.count < 50 && confidence > 0.8
-    }
-}
-
-enum TextLanguage {
-    case chinese
-    case english
-    case mixed
-
-    var displayName: String {
-        switch self {
-        case .chinese: return "中文"
-        case .english: return "English"
-        case .mixed: return "Mixed"
-        }
-    }
-}

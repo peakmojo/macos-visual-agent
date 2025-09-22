@@ -30,7 +30,7 @@ class ScreenCaptureManager: NSObject, ObservableObject, SCStreamDelegate {
     func requestPermissions() async {
         do {
             // Request screen recording permission
-            let available = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             print("✅ Screen recording permission granted")
         } catch {
             print("❌ Screen recording permission denied: \(error)")

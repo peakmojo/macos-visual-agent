@@ -16,6 +16,8 @@ class ContextStreamManager: ObservableObject {
     private var screenCaptureManager: ScreenCaptureManager?
     private let visionTextExtractor = VisionTextExtractor()
     private let accessibilityAnalyzer = AccessibilityAnalyzer()
+    // Mouse event recording disabled to prevent interference with mouse functionality
+    // private let mouseEventRecorder = MouseEventRecorder()
 
     // MARK: - Streaming Configuration
     private let streamingQueue = DispatchQueue(label: "context.streaming", qos: .userInitiated)
@@ -60,6 +62,9 @@ class ContextStreamManager: ObservableObject {
             screenCaptureManager?.startCapturing()
         }
 
+        // Mouse event recording disabled to prevent interference with mouse functionality
+        // mouseEventRecorder.startRecording()
+
         isStreaming = true
         print("🚀 Context streaming started")
     }
@@ -70,6 +75,9 @@ class ContextStreamManager: ObservableObject {
         if #available(macOS 12.3, *) {
             screenCaptureManager?.stopCapturing()
         }
+
+        // Mouse event recording disabled to prevent interference with mouse functionality
+        // mouseEventRecorder.stopRecording()
 
         isStreaming = false
         print("⏹️ Context streaming stopped")
@@ -92,11 +100,13 @@ class ContextStreamManager: ObservableObject {
 
         // Process concurrently to maintain 1 FPS
         async let textStrings = visionTextExtractor.extractText(from: image)
+        async let textWithPositions = visionTextExtractor.extractTextWithPositions(from: image)
         async let uiElements = extractUIElements(from: context)
         async let windowStructure = extractWindowStructure()
 
         // Wait for all to complete with timeout handling
         let extractedText = await textStrings
+        let extractedTextWithPositions = await textWithPositions
         let extractedUI = await uiElements
         let extractedWindows = await windowStructure
 
@@ -104,13 +114,19 @@ class ContextStreamManager: ObservableObject {
         let currentTime = CFAbsoluteTimeGetCurrent()
         let elapsedTime = currentTime - startTime
 
-        let screenDescription: String
+        var screenDescription: String
         if elapsedTime < maxProcessingTime {
+            // Mouse event correlation disabled to prevent interference with mouse functionality
+            let recentMouseEvents: [MouseEventData] = []
+            let correlatedEvents: [MouseEventData] = []
+
             // Generate screen description with already extracted text and windows
             screenDescription = await visionTextExtractor.generateScreenDescriptionWithData(
                 from: image,
                 textStrings: extractedText,
-                windowStructure: extractedWindows
+                textElements: extractedTextWithPositions,
+                windowStructure: extractedWindows,
+                recentMouseEvents: []
             )
         } else {
             // Use simple description to maintain 1 FPS
@@ -124,9 +140,17 @@ class ContextStreamManager: ObservableObject {
             Text Elements: \(extractedText.count)
             UI Elements: \(extractedUI.count)
 
-            TEXT CONTENT:
-            \(extractedText.joined(separator: "\n"))
+            TEXT CONTENT WITH COORDINATES:
             """
+
+            // Add coordinates for fast mode too
+            for textElement in extractedTextWithPositions {
+                let x = Int(textElement.boundingBox.minX)
+                let y = Int(textElement.boundingBox.minY)
+                let width = Int(textElement.boundingBox.width)
+                let height = Int(textElement.boundingBox.height)
+                screenDescription += "\n• [\(x),\(y),\(width)×\(height)] \(textElement.text)"
+            }
         }
 
         // Create simplified screen context
@@ -156,7 +180,8 @@ class ContextStreamManager: ObservableObject {
 
     private func extractUIElements(from context: CaptureContext) async -> [UIElement] {
         guard let bundleID = context.frontmostAppBundleID else { return [] }
-        return await accessibilityAnalyzer.extractUIElements(from: bundleID)
+        // Use enhanced complete UI tree extraction
+        return await accessibilityAnalyzer.extractCompleteUITree(from: bundleID)
     }
 
     private func extractWindowStructure() async -> WindowStructure {
@@ -166,6 +191,151 @@ class ContextStreamManager: ObservableObject {
             return WindowStructure(displays: [], applications: [], windows: [])
         }
     }
+
+    // MARK: - Mouse Event Correlation (Disabled)
+
+    /*
+    // Mouse event correlation disabled to prevent interference with mouse functionality
+    private func correlateMouseEventsWithUI(
+        mouseEvents: [MouseEventData],
+        uiElements: [UIElement],
+        textElements: [TextElementWithPosition],
+        windowStructure: WindowStructure
+    ) -> [MouseEventData] {
+        return mouseEvents.map { event in
+            var correlatedEvent = event
+
+            // Only correlate click events (not movements)
+            if isClickEvent(event.eventType) {
+                print("🖱️ Analyzing \(event.eventTypeName) at (\(Int(event.globalLocation.x)), \(Int(event.globalLocation.y)))")
+
+                // Find UI element at click location with priority
+                if let uiElement = findUIElementAt(location: event.globalLocation, in: uiElements) {
+                    correlatedEvent.associatedUIElement = "\(uiElement.elementType.rawValue): \(uiElement.displayText)"
+                    print("🎯 UI Element found: \(correlatedEvent.associatedUIElement!)")
+                }
+
+                // Find nearby text at click location with precise word matching using Vision framework
+                if let (textElement, specificWord) = findPreciseTextAt(location: event.globalLocation, in: textElements) {
+                    correlatedEvent.associatedText = specificWord ?? textElement.text
+                    if let word = specificWord {
+                        print("📝 Specific word: '\(word)'")
+                    } else {
+                        print("📄 Text element: '\(textElement.text.prefix(30))...'")
+                    }
+                }
+
+                // Find window at click location as fallback
+                if correlatedEvent.associatedUIElement == nil {
+                    if let window = findWindowAt(location: event.globalLocation, in: windowStructure) {
+                        let appName = windowStructure.applications.first { app in
+                            app.bundleIdentifier == window.owningApplicationBundleID
+                        }?.applicationName ?? "Unknown App"
+                        correlatedEvent.associatedUIElement = "Window: \(window.title ?? "Untitled") (\(appName))"
+                        print("🪟 Window context: \(correlatedEvent.associatedUIElement!)")
+                    }
+                }
+
+                // Summary log
+                if correlatedEvent.associatedUIElement != nil || correlatedEvent.associatedText != nil {
+                    print("✅ Click correlation complete")
+                } else {
+                    print("⚠️ No correlation found for click")
+                }
+            }
+
+            return correlatedEvent
+        }
+    }
+    */
+
+    // All mouse event correlation functions disabled to prevent interference with mouse functionality
+    /*
+    private func isClickEvent(_ eventType: NSEvent.EventType) -> Bool {
+        switch eventType {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func findUIElementAt(location: CGPoint, in uiElements: [UIElement]) -> UIElement? {
+        return uiElements.first { element in
+            element.frame.contains(location) && element.isVisible
+        }
+    }
+
+    private func findPreciseTextAt(location: CGPoint, in textElements: [TextElementWithPosition]) -> (TextElementWithPosition, String?)? {
+        // First pass: Look for exact word hits using Vision framework coordinates
+        for textElement in textElements {
+            for wordBox in textElement.wordBoundingBoxes {
+                if wordBox.boundingBox.contains(location) {
+                    print("🎯 Exact word hit: '\(wordBox.word)' at (\(Int(location.x)), \(Int(location.y)))")
+                    return (textElement, wordBox.word)
+                }
+            }
+        }
+
+        // Second pass: Look for nearest word within close proximity (15px)
+        var nearestText: TextElementWithPosition?
+        var nearestDistance: CGFloat = CGFloat.greatestFiniteMagnitude
+        var nearestWord: String?
+
+        for textElement in textElements {
+            // Check each word for proximity with tighter tolerance
+            for wordBox in textElement.wordBoundingBoxes {
+                let distance = distanceFromPoint(location, toRect: wordBox.boundingBox)
+                if distance < nearestDistance && distance < 15.0 {
+                    nearestDistance = distance
+                    nearestText = textElement
+                    nearestWord = wordBox.word
+                }
+            }
+        }
+
+        if let text = nearestText, let word = nearestWord {
+            print("📍 Nearby word hit: '\(word)' (distance: \(Int(nearestDistance))px)")
+            return (text, word)
+        }
+
+        // Third pass: Check text element bounding boxes as final fallback
+        for textElement in textElements {
+            let overallDistance = distanceFromPoint(location, toRect: textElement.boundingBox)
+            if overallDistance < nearestDistance && overallDistance < 25.0 {
+                nearestDistance = overallDistance
+                nearestText = textElement
+                nearestWord = nil // Use full text
+            }
+        }
+
+        if let text = nearestText {
+            print("📄 Text region hit: '\(text.text.prefix(20))...' (distance: \(Int(nearestDistance))px)")
+            return (text, nearestWord)
+        }
+
+        print("❌ No text found near click at (\(Int(location.x)), \(Int(location.y)))")
+        return nil
+    }
+
+    private func distanceFromPoint(_ point: CGPoint, toRect rect: CGRect) -> CGFloat {
+        // If point is inside rectangle, distance is 0
+        if rect.contains(point) {
+            return 0
+        }
+
+        // Calculate distance to nearest edge
+        let dx = max(0, max(rect.minX - point.x, point.x - rect.maxX))
+        let dy = max(0, max(rect.minY - point.y, point.y - rect.maxY))
+        return sqrt(dx * dx + dy * dy)
+    }
+
+    private func findWindowAt(location: CGPoint, in windowStructure: WindowStructure) -> WindowInfo? {
+        return windowStructure.windows.first { window in
+            window.isOnScreen && window.frame.contains(location)
+        }
+    }
+    */
 
 
     // MARK: - Caching
@@ -278,3 +448,210 @@ struct ProcessingStats {
         return totalUpdates > 0 ? 1.0 / averageProcessingTime : 0.0
     }
 }
+
+// MARK: - Mouse Event Types (Moved here for compilation fix)
+
+struct MouseEventData: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let eventType: NSEvent.EventType
+    let location: CGPoint
+    let globalLocation: CGPoint
+    let clickCount: Int
+    let deltaX: CGFloat
+    let deltaY: CGFloat
+    let scrollDeltaX: CGFloat
+    let scrollDeltaY: CGFloat
+    let modifierFlags: NSEvent.ModifierFlags
+    let isGlobalEvent: Bool
+    var associatedUIElement: String?
+    var associatedText: String?
+
+    var eventTypeName: String {
+        switch eventType {
+        case .leftMouseDown: return "Left Click"
+        case .leftMouseUp: return "Left Release"
+        case .rightMouseDown: return "Right Click"
+        case .rightMouseUp: return "Right Release"
+        case .otherMouseDown: return "Other Click"
+        case .otherMouseUp: return "Other Release"
+        case .mouseMoved: return "Move"
+        case .leftMouseDragged: return "Left Drag"
+        case .rightMouseDragged: return "Right Drag"
+        case .otherMouseDragged: return "Other Drag"
+        case .scrollWheel: return "Scroll"
+        default: return "Other"
+        }
+    }
+
+    var hasMovement: Bool {
+        return deltaX != 0 || deltaY != 0
+    }
+
+    var hasScroll: Bool {
+        return scrollDeltaX != 0 || scrollDeltaY != 0
+    }
+}
+
+// MARK: - Text Analysis Types (Moved here for compilation fix)
+
+struct TextElementWithPosition {
+    let text: String
+    let boundingBox: CGRect
+    let confidence: Float
+    let wordBoundingBoxes: [WordBoundingBox]
+
+    var coordinateDescription: String {
+        return "[\(Int(boundingBox.minX)),\(Int(boundingBox.minY)),\(Int(boundingBox.width))×\(Int(boundingBox.height))]"
+    }
+
+    var displayText: String {
+        return text
+    }
+}
+
+struct WordBoundingBox {
+    let word: String
+    let boundingBox: CGRect
+    let range: Range<String.Index>
+}
+
+// MARK: - Mouse Event Recorder (Disabled to prevent mouse interference)
+
+/*
+class MouseEventRecorder: ObservableObject {
+
+    // MARK: - Published Properties
+    @Published var isRecording = false
+    @Published var lastMouseEvent: MouseEventData?
+    @Published var eventHistory: [MouseEventData] = []
+
+    // MARK: - Private Properties
+    private var globalMonitor: Any?
+    private var localMonitor: Any?
+    private let maxHistorySize = 1000
+
+    // MARK: - Event Recording Control
+
+    func startRecording() {
+        guard !isRecording else { return }
+
+        // Check accessibility permissions
+        let accessEnabled = AXIsProcessTrustedWithOptions([
+            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
+        ] as CFDictionary)
+
+        if !accessEnabled {
+            print("⚠️ Accessibility permissions required for mouse event recording")
+            return
+        }
+
+        setupEventMonitors()
+        isRecording = true
+        print("🖱️ Started mouse event recording")
+    }
+
+    func stopRecording() {
+        guard isRecording else { return }
+
+        removeEventMonitors()
+        isRecording = false
+        print("🛑 Stopped mouse event recording")
+    }
+
+    private func setupEventMonitors() {
+        // Global monitor for system-wide events (excluding our app)
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [
+            .mouseMoved,
+            .leftMouseDown,
+            .leftMouseUp,
+            .rightMouseDown,
+            .rightMouseUp,
+            .otherMouseDown,
+            .otherMouseUp,
+            .leftMouseDragged,
+            .rightMouseDragged,
+            .otherMouseDragged,
+            .scrollWheel
+        ]) { [weak self] event in
+            self?.recordMouseEvent(event, isGlobal: true)
+        }
+
+        // Local monitor for events within our app
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [
+            .mouseMoved,
+            .leftMouseDown,
+            .leftMouseUp,
+            .rightMouseDown,
+            .rightMouseUp,
+            .otherMouseDown,
+            .otherMouseUp,
+            .leftMouseDragged,
+            .rightMouseDragged,
+            .otherMouseDragged,
+            .scrollWheel
+        ]) { [weak self] event in
+            self?.recordMouseEvent(event, isGlobal: false)
+            return event // Return event to continue normal processing
+        }
+    }
+
+    private func removeEventMonitors() {
+        if let globalMonitor = globalMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+            self.globalMonitor = nil
+        }
+
+        if let localMonitor = localMonitor {
+            NSEvent.removeMonitor(localMonitor)
+            self.localMonitor = nil
+        }
+    }
+
+    private func recordMouseEvent(_ event: NSEvent, isGlobal: Bool) {
+        let eventData = MouseEventData(
+            timestamp: Date(),
+            eventType: event.type,
+            location: event.locationInWindow,
+            globalLocation: NSEvent.mouseLocation,
+            clickCount: event.clickCount,
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            scrollDeltaX: event.scrollingDeltaX,
+            scrollDeltaY: event.scrollingDeltaY,
+            modifierFlags: event.modifierFlags,
+            isGlobalEvent: isGlobal
+        )
+
+        DispatchQueue.main.async {
+            self.lastMouseEvent = eventData
+            self.eventHistory.append(eventData)
+
+            // Limit history size
+            if self.eventHistory.count > self.maxHistorySize {
+                self.eventHistory.removeFirst(self.eventHistory.count - self.maxHistorySize)
+            }
+        }
+    }
+
+    // MARK: - Utility Methods
+
+    func clearHistory() {
+        eventHistory.removeAll()
+        lastMouseEvent = nil
+    }
+
+    func getRecentEvents(count: Int = 10) -> [MouseEventData] {
+        return Array(eventHistory.suffix(count))
+    }
+
+    func getEventsInTimeRange(seconds: TimeInterval) -> [MouseEventData] {
+        let cutoffTime = Date().addingTimeInterval(-seconds)
+        return eventHistory.filter { $0.timestamp >= cutoffTime }
+    }
+
+    deinit {
+        stopRecording()
+    }
+}
+*/

@@ -1,0 +1,84 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+*.xcuserstate
+*.xcuserdatad
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+!default.pbxuser
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+xcuserdata/
+.build/
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build
+
+# Database files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# Environment and secrets
+.env
+.env.*
+secrets.json
+credentials.json
+*.key
+*.pem
+*.p12
+*.keystore
+
+# API keys and tokens
+api_keys.txt
+tokens.txt
+
+# User data and logs
+logs/
+*.log
+user_data/
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+
+# Build artifacts
+build/
+dist/
+
+# Screenshots and recordings (user privacy)
+screenshots/
+recordings/
+screen_captures/
+
+# Profile images (if containing user data)
+profile_images/
+avatars/

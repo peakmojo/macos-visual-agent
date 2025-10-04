@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and create DMG
+        run: |
+          make dmg
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VisualAgent-${{ steps.version.outputs.version }}
+          path: build/VisualAgent.dmg
+          retention-days: 30
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Visual Agent ${{ steps.version.outputs.version }}
+          draft: true
+          prerelease: false
+          files: |
+            build/VisualAgent.dmg
+          body: |
+            ## 🎯 Visual Agent ${{ steps.version.outputs.version }}
+
+            ### What's New
+
+            <!-- Add release notes here -->
+
+            ### Installation
+
+            1. Download `VisualAgent.dmg`
+            2. Open the DMG and drag Visual Agent to Applications
+            3. Grant Screen Recording and Accessibility permissions when prompted
+
+            ### System Requirements
+
+            - macOS 13.0 (Ventura) or later
+            - Apple Silicon or Intel Mac
+
+            ### Privacy & Security
+
+            - ✅ 100% local processing
+            - ✅ No network requests
+            - ✅ No telemetry
+            - ✅ Open source & auditable
+
+            ---
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/v0.0.0...${{ steps.version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Release Created!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **DMG**: Uploaded as draft release" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size**: $(du -h build/VisualAgent.dmg | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Edit the draft release notes" >> $GITHUB_STEP_SUMMARY
+          echo "2. Publish the release" >> $GITHUB_STEP_SUMMARY

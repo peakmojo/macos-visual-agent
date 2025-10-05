@@ -18,6 +18,13 @@
 		C4444444444444444444444A /* ContextStreamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4444444444444444444444B /* ContextStreamManager.swift */; };
 		C5555555555555555555555A /* ActionWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5555555555555555555555B /* ActionWindowView.swift */; };
 		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
+		D1111111111111111111111A /* NotificationCenterObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1111111111111111111111B /* NotificationCenterObserver.swift */; };
+		D2222222222222222222222A /* NotificationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2222222222222222222222B /* NotificationParser.swift */; };
+		D3333333333333333333333A /* MessageAttachmentWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3333333333333333333333B /* MessageAttachmentWatcher.swift */; };
+		D4444444444444444444444A /* MessageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4444444444444444444444B /* MessageProcessor.swift */; };
+		D5555555555555555555555A /* MessageResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5555555555555555555555B /* MessageResponder.swift */; };
+		E1111111111111111111111A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1111111111111111111111B /* AppSettings.swift */; };
+		E2222222222222222222222A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2222222222222222222222B /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +40,13 @@
 		C3333333333333333333333B /* AccessibilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAnalyzer.swift; sourceTree = "<group>"; };
 		C4444444444444444444444B /* ContextStreamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextStreamManager.swift; sourceTree = "<group>"; };
 		C5555555555555555555555B /* ActionWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionWindowView.swift; sourceTree = "<group>"; };
+		D1111111111111111111111B /* NotificationCenterObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCenterObserver.swift; sourceTree = "<group>"; };
+		D2222222222222222222222B /* NotificationParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationParser.swift; sourceTree = "<group>"; };
+		D3333333333333333333333B /* MessageAttachmentWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageAttachmentWatcher.swift; sourceTree = "<group>"; };
+		D4444444444444444444444B /* MessageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageProcessor.swift; sourceTree = "<group>"; };
+		D5555555555555555555555B /* MessageResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageResponder.swift; sourceTree = "<group>"; };
+		E1111111111111111111111B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		E2222222222222222222222B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
 		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -76,6 +90,13 @@
 				C3333333333333333333333B /* AccessibilityAnalyzer.swift */,
 				C4444444444444444444444B /* ContextStreamManager.swift */,
 				C5555555555555555555555B /* ActionWindowView.swift */,
+				D1111111111111111111111B /* NotificationCenterObserver.swift */,
+				D2222222222222222222222B /* NotificationParser.swift */,
+				D3333333333333333333333B /* MessageAttachmentWatcher.swift */,
+				D4444444444444444444444B /* MessageProcessor.swift */,
+				D5555555555555555555555B /* MessageResponder.swift */,
+				E1111111111111111111111B /* AppSettings.swift */,
+				E2222222222222222222222B /* SettingsView.swift */,
 				1C99563474D24779AEF138B9 /* bary_headshot.jpeg */,
 				2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */,
 				A5555555555555555555555B /* VisualAgent.entitlements */,
@@ -163,6 +184,13 @@
 				C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */,
 				C4444444444444444444444A /* ContextStreamManager.swift in Sources */,
 				C5555555555555555555555A /* ActionWindowView.swift in Sources */,
+				D1111111111111111111111A /* NotificationCenterObserver.swift in Sources */,
+				D2222222222222222222222A /* NotificationParser.swift in Sources */,
+				D3333333333333333333333A /* MessageAttachmentWatcher.swift in Sources */,
+				D4444444444444444444444A /* MessageProcessor.swift in Sources */,
+				D5555555555555555555555A /* MessageResponder.swift in Sources */,
+				E1111111111111111111111A /* AppSettings.swift in Sources */,
+				E2222222222222222222222A /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

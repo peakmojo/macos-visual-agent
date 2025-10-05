@@ -4,12 +4,15 @@ import AppKit
 struct ContentView: View {
     @StateObject private var screenMonitor = ScreenMonitor()
     @StateObject private var databaseManager = DatabaseManager()
+    @StateObject private var messageProcessor = MessageProcessor()
+    @ObservedObject var settings = AppSettings.shared
     @State private var isExpanded = false
     @State private var hoveredBuddy: String? = nil
     @State private var showChat = false
     @State private var selectedChatBuddy: Buddy? = nil
     @State private var showQuitConfirmation = false
-    @State private var showTaskTimeline = false
+    @State private var showSettings = false
+    @State private var showMessageTimeline = false
     @State private var activityFeed: [ActivityItem] = []
     @State private var showTrialReport = false
     @State private var showActionWindow = false
@@ -21,138 +24,68 @@ struct ContentView: View {
     ]
     
     var body: some View {
-        Group {
-            if showTaskTimeline {
-                // When Task Timeline is open: side-by-side layout
+        ZStack(alignment: .topTrailing) {
+            // Base layer: Main UI stays in place at top-right
+            VStack(spacing: 0) {
                 HStack(spacing: 0) {
-                    taskTimelineArea
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                    
-                    // Right area for Work Buddies components
-                    if isExpanded {
-                        // Expanded panel on the right
-                        HStack {
-                            Spacer()
-                            VStack {
-                                workBuddiesPanel
-                                Spacer()
-                            }
-                        }
-                    } else {
-                        // Collapsed bar in the right area with optional Action Window below
-                        VStack {
-                            Spacer()
-                                .frame(height: 20)
-                            HStack {
-                                Spacer()
-                                VStack(spacing: 0) {
-                                    miniOverlayBar
+                    Spacer()
+                        .allowsHitTesting(false)
 
-                                    // Action Window attached panel (curtain drop)
-                                    if showActionWindow {
-                                        ActionWindowView()
-                                            .frame(width: 420, height: 480)
-                                            .background(
-                                                VStack(spacing: 0) {
-                                                    // Seamless connection to main bar
-                                                    Rectangle()
-                                                        .fill(Color.white.opacity(0.7))
-                                                        .frame(height: 12)
+                    VStack(spacing: 0) {
+                        // Right-side panel or mini bar
+                        if isExpanded {
+                            workBuddiesPanel
+                        } else {
+                            VStack(spacing: 0) {
+                                miniOverlayBar
 
-                                                    // Main panel background
-                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                        .fill(Color.white.opacity(0.7))
-                                                        .overlay(
-                                                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                                                        )
-                                                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
-                                                }
+                                // Action Window attached panel (curtain drop)
+                                if showActionWindow {
+                                    ActionWindowView()
+                                        .frame(width: 420, height: 480)
+                                        .background(
+                                            VStack(spacing: 0) {
+                                                // Seamless connection to main bar
+                                                Rectangle()
+                                                    .fill(Color.white.opacity(0.7))
+                                                    .frame(height: 12)
+
+                                                // Main panel background
+                                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                    .fill(Color.white.opacity(0.7))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                                    )
+                                                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
+                                            }
+                                        )
+                                        .clipShape(
+                                            UnevenRoundedRectangle(
+                                                topLeadingRadius: 0,
+                                                bottomLeadingRadius: 24,
+                                                bottomTrailingRadius: 24,
+                                                topTrailingRadius: 0,
+                                                style: .continuous
                                             )
-                                            .clipShape(
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 0,
-                                                    bottomLeadingRadius: 24,
-                                                    bottomTrailingRadius: 24,
-                                                    topTrailingRadius: 0,
-                                                    style: .continuous
-                                                )
-                                            )
-                                            .transition(.move(edge: .top).combined(with: .opacity))
-                                            .zIndex(10)
-                                    }
+                                        )
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                        .zIndex(10)
                                 }
-                                Spacer()
                             }
-                            Spacer()
                         }
                     }
                 }
-            } else {
-                // When Task Timeline is closed: overlay layout
-                GeometryReader { geometry in
-                    if isExpanded {
-                        // Expanded panel positioned on the right
-                        HStack {
-                            Spacer()
-                            VStack {
-                                workBuddiesPanel
-                                Spacer()
-                            }
-                        }
-                    } else {
-                        // Collapsed bar positioned at top center with optional Action Window below
-                        VStack {
-                            HStack {
-                                Spacer()
-                                VStack(spacing: 0) {
-                                    miniOverlayBar
 
-                                    // Action Window attached panel (curtain drop)
-                                    if showActionWindow {
-                                        ActionWindowView()
-                                            .frame(width: 420, height: 480)
-                                            .background(
-                                                VStack(spacing: 0) {
-                                                    // Seamless connection to main bar
-                                                    Rectangle()
-                                                        .fill(Color.white.opacity(0.7))
-                                                        .frame(height: 12)
-
-                                                    // Main panel background
-                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                        .fill(Color.white.opacity(0.7))
-                                                        .overlay(
-                                                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                                                        )
-                                                        .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
-                                                }
-                                            )
-                                            .clipShape(
-                                                UnevenRoundedRectangle(
-                                                    topLeadingRadius: 0,
-                                                    bottomLeadingRadius: 24,
-                                                    bottomTrailingRadius: 24,
-                                                    topTrailingRadius: 0,
-                                                    style: .continuous
-                                                )
-                                            )
-                                            .transition(.move(edge: .top).combined(with: .opacity))
-                                            .zIndex(10)
-                                    }
-                                }
-                                Spacer()
-                            }
-                            .padding(.top, 16)
-                            Spacer()
-                        }
-                    }
-                }
+                Spacer()
+                    .allowsHitTesting(false)
             }
+            .frame(width: 440, height: 50)
+
         }
+        .frame(width: 440, height: 50)
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
-        .animation(.easeInOut(duration: 0.25), value: showTaskTimeline)
+        .animation(.easeInOut(duration: 0.25), value: showMessageTimeline)
         .animation(.easeInOut(duration: 0.15), value: hoveredBuddy)
         // Temporarily disabled to debug disappearing window issue
         // .onChange(of: isExpanded) { _ in
@@ -173,6 +106,34 @@ struct ContentView: View {
             // Hardcoded - no database
             loadSampleActivityFeed()
             startJobSimulationWorkflow()
+
+            // Start features based on settings
+            if settings.screenCaptureEnabled {
+                screenMonitor.startMonitoring()
+            }
+            if settings.messageMonitoringEnabled {
+                messageProcessor.start()
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+        .sheet(isPresented: $showMessageTimeline) {
+            messageTimelineArea
+        }
+        .onChange(of: settings.screenCaptureEnabled) { enabled in
+            if enabled {
+                screenMonitor.startMonitoring()
+            } else {
+                screenMonitor.stopMonitoring()
+            }
+        }
+        .onChange(of: settings.messageMonitoringEnabled) { enabled in
+            if enabled {
+                messageProcessor.start()
+            } else {
+                messageProcessor.stop()
+            }
         }
         .overlay(
             // Founder Chat Module overlay
@@ -198,19 +159,13 @@ struct ContentView: View {
     
     // Top Mini Overlay Bar - 320px width, 48px height, floating top-right
     var miniOverlayBar: some View {
-        HStack(spacing: 12) {
-            // Left: 👁 watching count
-            HStack(spacing: 4) {
-                Image(systemName: "eye.fill")
-                    .foregroundColor(.black.opacity(0.7))
-                    .font(.system(size: 12))
-                let watchingCount = buddies.filter { $0.status == .watching }.count
-                Text("\(watchingCount) watching")
-                    .foregroundColor(.black.opacity(0.7))
-                    .font(.system(size: 12, weight: .medium))
-            }
-            
-            // Center: Founder avatar stacking (Alex, Sarah) + status dots
+        ZStack {
+            // Full-size draggable background
+            WindowDragView()
+
+            // Content on top
+            HStack(spacing: 12) {
+                // Center: Founder avatar stacking (Alex, Sarah) + status dots
             HStack(spacing: -6) {
                 ForEach(buddies.filter { $0.status == .watching }.prefix(2), id: \.id) { buddy in
                     ZStack {
@@ -261,57 +216,65 @@ struct ContentView: View {
                     }
                 }
             }
-            
-            // Right: ⏱ 29m + tasks button + expand button
+
+            // Right: buttons
             HStack(spacing: 8) {
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(.black.opacity(0.7))
-                        .font(.system(size: 12))
-                    Text(formatSessionTime())
-                        .foregroundColor(.black.opacity(0.7))
-                        .font(.system(size: 12, weight: .medium))
-                        .monospacedDigit()
-                }
-                
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.25)) {
-                        showTaskTimeline.toggle()
+                        showMessageTimeline.toggle()
                     }
                 }) {
-                    Image(systemName: showTaskTimeline ? "list.bullet.rectangle.fill" : "list.bullet.rectangle")
-                        .foregroundColor(showTaskTimeline ? .blue : .black.opacity(0.7))
-                        .font(.system(size: 12))
+                    Image(systemName: showMessageTimeline ? "message.fill" : "message")
+                        .foregroundColor(showMessageTimeline ? .blue : .black.opacity(0.7))
+                        .font(.system(size: 14))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .help("Toggle Task Timeline")
+                .help("Toggle Message Timeline")
 
-                Button(action: { showActionWindow.toggle() }) {
+                Button(action: {
+                    if settings.screenCaptureEnabled {
+                        showActionWindow.toggle()
+                    }
+                }) {
                     Image(systemName: showActionWindow ? "eye.fill" : "eye")
-                        .foregroundColor(showActionWindow ? .green : .black.opacity(0.7))
-                        .font(.system(size: 12))
+                        .foregroundColor(
+                            settings.screenCaptureEnabled
+                                ? (showActionWindow ? .green : .black.opacity(0.7))
+                                : .gray.opacity(0.4)
+                        )
+                        .font(.system(size: 14))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .help("Toggle Action Window")
+                .disabled(!settings.screenCaptureEnabled)
+                .help(settings.screenCaptureEnabled ? "Toggle Action Window" : "Screen Capture Disabled (Enable in Settings)")
+
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape.fill")
+                        .foregroundColor(.black.opacity(0.6))
+                        .font(.system(size: 14))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Settings")
 
                 Button(action: { showQuitConfirmation = true }) {
                     Image(systemName: "power")
                         .foregroundColor(.black.opacity(0.7))
-                        .font(.system(size: 12))
+                        .font(.system(size: 14))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .help("Quit Visual Agent")
 
             }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 24)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white.opacity(0.9))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
-        .frame(width: 420, height: 48)
+        .frame(width: 420, height: 40)
     }
     
     // Work Buddies Panel - 400px width, half screen height, right-side slide out
@@ -524,86 +487,78 @@ struct ContentView: View {
     }
     
     // Task Timeline Area - left-side, collapsible
-    var taskTimelineArea: some View {
+    var messageTimelineArea: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Task Timeline")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black.opacity(0.8))
-                    Text("Active Tasks")
+                    HStack(spacing: 6) {
+                        Text("Message Timeline")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black.opacity(0.8))
+                        if messageProcessor.isProcessing {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    Text("\(messageProcessor.processingHistory.count) messages")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.black.opacity(0.5))
                 }
-                
+
                 Spacer()
-                
-                Button(action: { 
+
+                Button(action: {
                     withAnimation(.easeInOut(duration: 0.25)) {
-                        showTaskTimeline.toggle()
+                        showMessageTimeline.toggle()
                     }
                 }) {
-                    Image(systemName: "sidebar.left")
-                        .font(.system(size: 12))
-                        .foregroundColor(.black.opacity(0.6))
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.black.opacity(0.4))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
             
-            // Task cards
+            // Message Stream
             ScrollView {
-                VStack(spacing: 16) {
-                    // Tasks section
-                    VStack(spacing: 12) {
-                        ForEach(sampleTasks) { task in
-                            TaskCard(task: task)
+                LazyVStack(spacing: 8) {
+                    if messageProcessor.processingHistory.isEmpty {
+                        // Empty state
+                        VStack(spacing: 12) {
+                            Image(systemName: "message.badge")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray.opacity(0.3))
+                            Text("No messages yet")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("Enable monitoring in Settings")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 60)
+                    } else {
+                        // Show messages in reverse chronological order
+                        ForEach(messageProcessor.processingHistory.reversed()) { message in
+                            MessageTimelineCard(message: message)
                         }
                     }
-                    
-                    // Desktop Feed section
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            HStack(spacing: 4) {
-                                Image(systemName: "desktopcomputer")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.black.opacity(0.6))
-                                Text("Desktop Activity")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.black.opacity(0.8))
-                            }
-                            Spacer()
-                            Text("Live")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    Capsule()
-                                        .fill(.green)
-                                )
-                        }
-                        
-                        DesktopFeedView(activityFeed: activityFeed)
-                    }
-                    .padding(.horizontal, 20)
                 }
-                .padding(.bottom, 20)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
             
-            Spacer()
         }
-        .frame(width: 380)
+        .frame(width: 420, height: 600)
         .background(
-            Rectangle()
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.95))
-                .shadow(color: .black.opacity(0.1), radius: 15, x: 3, y: 0)
-        )
-        .clipShape(
-            RoundedRectangle(cornerRadius: 0)
+                .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
         )
     }
     
@@ -869,8 +824,66 @@ struct ContentView: View {
     
     private func updateAppWindowSize() {
         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
-            appDelegate.updateWindowSize(isExpanded: isExpanded, showTaskTimeline: showTaskTimeline)
+            appDelegate.updateWindowSize(isExpanded: isExpanded, showTaskTimeline: showMessageTimeline)
         }
+    }
+}
+
+// MARK: - Message Timeline Card (Compact)
+struct MessageTimelineCard: View {
+    let message: ProcessedMessage
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            // App icon
+            Text(message.notification.displayName == "iMessage" ? "💬" : "💚")
+                .font(.system(size: 16))
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Sender + time
+                HStack {
+                    Text(message.notification.sender)
+                        .font(.system(size: 12, weight: .semibold))
+                    Spacer()
+                    Text(message.timestamp, style: .time)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+
+                // Message text
+                if !message.notification.messageText.isEmpty {
+                    Text(message.notification.messageText)
+                        .font(.system(size: 11))
+                        .foregroundColor(.black.opacity(0.7))
+                        .lineLimit(2)
+                }
+
+                // Attachment indicator
+                if message.attachmentURL != nil {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paperclip")
+                            .font(.system(size: 9))
+                        Text("Attachment")
+                            .font(.system(size: 9))
+                    }
+                    .foregroundColor(.blue.opacity(0.7))
+                }
+
+                // Status
+                if message.responseSent {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 9))
+                        Text("Response sent")
+                            .font(.system(size: 9))
+                    }
+                    .foregroundColor(.green)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.white.opacity(0.6))
+        .cornerRadius(8)
     }
 }
 
@@ -2074,22 +2087,22 @@ struct VisualEffectBackground: NSViewRepresentable {
     private let material: NSVisualEffectView.Material
     private let blendingMode: NSVisualEffectView.BlendingMode
     private let isEmphasized: Bool
-    
-    init(material: NSVisualEffectView.Material = .hudWindow, 
-         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow, 
+
+    init(material: NSVisualEffectView.Material = .hudWindow,
+         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
          emphasized: Bool = false) {
         self.material = material
         self.blendingMode = blendingMode
         self.isEmphasized = emphasized
     }
-    
+
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.autoresizingMask = [.width, .height]
         view.state = .active
         return view
     }
-    
+
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
@@ -2097,3 +2110,75 @@ struct VisualEffectBackground: NSViewRepresentable {
     }
 }
 
+struct WindowDragView: NSViewRepresentable {
+    func makeNSView(context: Context) -> DraggableView {
+        return DraggableView()
+    }
+
+    func updateNSView(_ nsView: DraggableView, context: Context) {
+        // No updates needed
+    }
+}
+
+class DraggableView: NSView {
+    private var initialMouseLocation: NSPoint?
+    private var initialWindowOrigin: NSPoint?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        // Enable layer to receive events
+        self.wantsLayer = true
+        self.layer?.backgroundColor = NSColor.clear.cgColor
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Allow hit testing to pass through to this view
+        return self
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        print("🖱️ DraggableView mouseDown")
+        guard let window = self.window else {
+            print("❌ No window found")
+            return
+        }
+        initialMouseLocation = NSEvent.mouseLocation
+        initialWindowOrigin = window.frame.origin
+        print("📍 Initial mouse: \(initialMouseLocation!), window: \(initialWindowOrigin!)")
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let window = self.window,
+              let initialMouse = initialMouseLocation,
+              let initialOrigin = initialWindowOrigin else {
+            print("❌ Missing drag data")
+            return
+        }
+
+        let currentMouseLocation = NSEvent.mouseLocation
+        let deltaX = currentMouseLocation.x - initialMouse.x
+        let deltaY = currentMouseLocation.y - initialMouse.y
+
+        let newOrigin = NSPoint(
+            x: initialOrigin.x + deltaX,
+            y: initialOrigin.y + deltaY
+        )
+
+        window.setFrameOrigin(newOrigin)
+        print("🔄 Dragging to: \(newOrigin)")
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        print("🖱️ DraggableView mouseUp")
+        initialMouseLocation = nil
+        initialWindowOrigin = nil
+    }
+}

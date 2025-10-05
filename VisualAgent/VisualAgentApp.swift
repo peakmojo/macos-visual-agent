@@ -40,10 +40,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func setupOverlayWindow() {
         let contentView = ContentView()
-        
-        // Start with larger size to accommodate both collapsed and expanded states
+
+        // Start with minimal size for just the mini bar
         overlayWindow = CustomWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 50),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -56,7 +56,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         overlayWindow?.ignoresMouseEvents = false
         overlayWindow?.acceptsMouseMovedEvents = true
         overlayWindow?.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle]
-        overlayWindow?.isMovableByWindowBackground = true
+        overlayWindow?.isMovableByWindowBackground = false
         
         // Add rounded corners to the window
         overlayWindow?.contentView?.wantsLayer = true
@@ -174,7 +174,7 @@ class CustomWindow: NSWindow {
     override var canBecomeKey: Bool {
         return true
     }
-    
+
     override var canBecomeMain: Bool {
         return true
     }

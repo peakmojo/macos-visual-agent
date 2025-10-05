@@ -3,24 +3,35 @@ import CoreGraphics
 import AppKit
 import Combine
 
+@MainActor
 class ScreenMonitor: ObservableObject {
     @Published var isMonitoring = false
     @Published var lastScreenshot: NSImage?
     @Published var mousePosition: CGPoint = .zero
     @Published var keystrokes: [String] = []
-    
+
     private var screenshotTimer: Timer?
     private var mouseTimer: Timer?
     private var eventTap: CFMachPort?
     private let maxKeystrokeHistory = 100
-    
+    private let settings = AppSettings.shared
+
     init() {
-        requestPermissions()
+        // Don't request permissions on init - wait for user to enable feature
     }
-    
+
     func startMonitoring() {
+        // Check if feature is enabled in settings
+        guard settings.screenCaptureEnabled else {
+            print("⚠️ Screen capture is disabled in settings")
+            return
+        }
+
         guard !isMonitoring else { return }
-        
+
+        // Request permissions when user enables the feature
+        requestPermissions()
+
         isMonitoring = true
         startScreenshotCapture()
         startMouseTracking()
@@ -137,6 +148,13 @@ class ScreenMonitor: ObservableObject {
     }
     
     deinit {
-        stopMonitoring()
+        // Clean up without calling stopMonitoring (actor isolation issue)
+        screenshotTimer?.invalidate()
+        mouseTimer?.invalidate()
+
+        if let eventTap = eventTap {
+            CGEvent.tapEnable(tap: eventTap, enable: false)
+            CFMachPortInvalidate(eventTap)
+        }
     }
 }

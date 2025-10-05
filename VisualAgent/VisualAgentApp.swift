@@ -43,7 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start with minimal size for just the mini bar
         overlayWindow = CustomWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 50),
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 50),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false

@@ -80,10 +80,10 @@ struct ContentView: View {
                 Spacer()
                     .allowsHitTesting(false)
             }
-            .frame(width: 440, height: 50)
+            .frame(width: 300, height: 50)
 
         }
-        .frame(width: 440, height: 50)
+        .frame(width: 300, height: 50)
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
         .animation(.easeInOut(duration: 0.25), value: showMessageTimeline)
         .animation(.easeInOut(duration: 0.15), value: hoveredBuddy)
@@ -274,7 +274,7 @@ struct ContentView: View {
                 .fill(Color.white.opacity(0.9))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
-        .frame(width: 420, height: 40)
+        .frame(width: 280, height: 40)
     }
     
     // Work Buddies Panel - 400px width, half screen height, right-side slide out
@@ -554,7 +554,7 @@ struct ContentView: View {
             }
             
         }
-        .frame(width: 420, height: 600)
+        .frame(width: 280, height: 600)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.95))

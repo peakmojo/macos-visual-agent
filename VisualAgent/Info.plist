@@ -34,5 +34,7 @@
 	<string>Visual Agent needs screen recording access to monitor productivity and share with your visual agents.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Visual Agent needs accessibility access to analyze UI elements and provide intelligent screen understanding.</string>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>Visual Agent needs accessibility access to monitor notifications from Messages and WeChat for intelligent message processing.</string>
 </dict>
 </plist>

@@ -36,43 +36,7 @@ struct ContentView: View {
                         if isExpanded {
                             workBuddiesPanel
                         } else {
-                            VStack(spacing: 0) {
-                                miniOverlayBar
-
-                                // Action Window attached panel (curtain drop)
-                                if showActionWindow {
-                                    ActionWindowView()
-                                        .frame(width: 420, height: 480)
-                                        .background(
-                                            VStack(spacing: 0) {
-                                                // Seamless connection to main bar
-                                                Rectangle()
-                                                    .fill(Color.white.opacity(0.7))
-                                                    .frame(height: 12)
-
-                                                // Main panel background
-                                                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                    .fill(Color.white.opacity(0.7))
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                                            .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                                                    )
-                                                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 8)
-                                            }
-                                        )
-                                        .clipShape(
-                                            UnevenRoundedRectangle(
-                                                topLeadingRadius: 0,
-                                                bottomLeadingRadius: 24,
-                                                bottomTrailingRadius: 24,
-                                                topTrailingRadius: 0,
-                                                style: .continuous
-                                            )
-                                        )
-                                        .transition(.move(edge: .top).combined(with: .opacity))
-                                        .zIndex(10)
-                                }
-                            }
+                            miniOverlayBar
                         }
                     }
                 }
@@ -120,6 +84,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showMessageTimeline) {
             messageTimelineArea
+        }
+        .sheet(isPresented: $showActionWindow) {
+            actionWindowArea
         }
         .onChange(of: settings.screenCaptureEnabled) { enabled in
             if enabled {
@@ -486,6 +453,53 @@ struct ContentView: View {
         .frame(minHeight: 500)
     }
     
+    // Action Window Area - independent window for screen analysis
+    var actionWindowArea: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "eye.fill")
+                            .foregroundColor(.green)
+                        Text("Screen Analysis")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black.opacity(0.8))
+                    }
+                    Text("Real-time screen context")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.black.opacity(0.5))
+                }
+
+                Spacer()
+
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showActionWindow.toggle()
+                    }
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
+            // Action Window Content
+            ActionWindowView()
+                .frame(maxHeight: .infinity)
+        }
+        .frame(width: 420, height: 500)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
+        )
+    }
+
     // Task Timeline Area - left-side, collapsible
     var messageTimelineArea: some View {
         VStack(spacing: 0) {

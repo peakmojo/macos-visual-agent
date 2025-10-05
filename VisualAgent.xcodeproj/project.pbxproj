@@ -12,12 +12,12 @@
 		A2222222222222222222222A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2222222222222222222222B /* ContentView.swift */; };
 		A3333333333333333333333A /* ScreenMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3333333333333333333333B /* ScreenMonitor.swift */; };
 		A4444444444444444444444A /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4444444444444444444444B /* DatabaseManager.swift */; };
+		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
 		C1111111111111111111111A /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1111111111111111111111B /* ScreenCaptureManager.swift */; };
 		C2222222222222222222222A /* VisionTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2222222222222222222222B /* VisionTextExtractor.swift */; };
 		C3333333333333333333333A /* AccessibilityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3333333333333333333333B /* AccessibilityAnalyzer.swift */; };
 		C4444444444444444444444A /* ContextStreamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4444444444444444444444B /* ContextStreamManager.swift */; };
 		C5555555555555555555555A /* ActionWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5555555555555555555555B /* ActionWindowView.swift */; };
-		B64968864569428F8CD4D5AE /* tian_headshot.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 2F053DFA76744333B49DB2CA /* tian_headshot.jpeg */; };
 		D1111111111111111111111A /* NotificationCenterObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1111111111111111111111B /* NotificationCenterObserver.swift */; };
 		D2222222222222222222222A /* NotificationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2222222222222222222222B /* NotificationParser.swift */; };
 		D3333333333333333333333A /* MessageAttachmentWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3333333333333333333333B /* MessageAttachmentWatcher.swift */; };
@@ -35,6 +35,8 @@
 		A2222222222222222222222B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A3333333333333333333333B /* ScreenMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenMonitor.swift; sourceTree = "<group>"; };
 		A4444444444444444444444B /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
+		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
+		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C1111111111111111111111B /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 		C2222222222222222222222B /* VisionTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionTextExtractor.swift; sourceTree = "<group>"; };
 		C3333333333333333333333B /* AccessibilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAnalyzer.swift; sourceTree = "<group>"; };
@@ -47,8 +49,6 @@
 		D5555555555555555555555B /* MessageResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageResponder.swift; sourceTree = "<group>"; };
 		E1111111111111111111111B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		E2222222222222222222222B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		A5555555555555555555555B /* VisualAgent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VisualAgent.entitlements; sourceTree = "<group>"; };
-		A6666666666666666666666B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,14 +68,6 @@
 				A9999999999999999999999A /* VisualAgent */,
 				AAAAAAAAAAAAAAAAAAAAAA0A /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		AAAAAAAAAAAAAAAAAAAAAA0A /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A0000000000000000000000A /* VisualAgent.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		A9999999999999999999999A /* VisualAgent */ = {
@@ -105,6 +97,14 @@
 			path = VisualAgent;
 			sourceTree = "<group>";
 		};
+		AAAAAAAAAAAAAAAAAAAAAA0A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A0000000000000000000000A /* VisualAgent.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -122,7 +122,7 @@
 			);
 			name = VisualAgent;
 			productName = VisualAgent;
-			productReference = A0000000000000000000000A /* WorkBuddy.app */;
+			productReference = A0000000000000000000000A /* VisualAgent.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -324,7 +324,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 2894VQP39Z;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -352,7 +352,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 2894VQP39Z;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -374,20 +374,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B0000000000000000000000A /* Build configuration list for PBXProject "VisualAgent" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				B1111111111111111111111A /* Debug */,
-				B2222222222222222222222A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		ACCCCCCCCCCCCCCCCCCCCCC0 /* Build configuration list for PBXNativeTarget "VisualAgent" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B3333333333333333333333A /* Debug */,
 				B4444444444444444444444A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0000000000000000000000A /* Build configuration list for PBXProject "VisualAgent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1111111111111111111111A /* Debug */,
+				B2222222222222222222222A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

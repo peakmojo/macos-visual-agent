@@ -58,6 +58,8 @@ class NotificationCenterObserver: ObservableObject {
             CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .defaultMode)
         }
 
+        pollingTimer?.invalidate()
+        pollingTimer = nil
         observer = nil
         runLoopSource = nil
         isMonitoring = false
@@ -78,6 +80,9 @@ class NotificationCenterObserver: ObservableObject {
     // MARK: - Observer Setup
 
     private func setupObserver() {
+        // First, try to read existing notifications
+        readExistingNotifications()
+
         // Get Notification Center UI process
         guard let notificationCenterPID = getNotificationCenterPID() else {
             print("❌ Could not find Notification Center process")
@@ -122,6 +127,84 @@ class NotificationCenterObserver: ObservableObject {
             CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .defaultMode)
             print("✅ Added observer to run loop")
         }
+
+        // Poll for new notifications every 5 seconds as backup
+        startPolling()
+    }
+
+    private func readExistingNotifications() {
+        print("🔍 Reading existing notifications from Notification Center...")
+
+        let systemElement = AXUIElementCreateSystemWide()
+
+        // Try to find notification center window
+        var windowListRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(systemElement, kAXWindowsAttribute as CFString, &windowListRef)
+
+        guard result == .success, let windowList = windowListRef as? [AXUIElement] else {
+            print("⚠️ Could not get windows list: \(result.rawValue)")
+            return
+        }
+
+        print("📋 Found \(windowList.count) windows")
+
+        for window in windowList {
+            // Get window title
+            var titleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
+            let title = titleRef as? String ?? ""
+
+            // Get window role
+            var roleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(window, kAXRoleAttribute as CFString, &roleRef)
+            let role = roleRef as? String ?? ""
+
+            print("   Window: \(title) [\(role)]")
+
+            // Search for notification elements
+            searchForNotifications(in: window)
+        }
+    }
+
+    private func searchForNotifications(in element: AXUIElement) {
+        // Get all children
+        var childrenRef: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenRef)
+
+        guard result == .success, let children = childrenRef as? [AXUIElement] else {
+            return
+        }
+
+        for child in children {
+            // Check if this looks like a notification
+            var roleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(child, kAXRoleAttribute as CFString, &roleRef)
+            let role = roleRef as? String ?? ""
+
+            var descRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(child, kAXDescriptionAttribute as CFString, &descRef)
+            let desc = descRef as? String ?? ""
+
+            if role.contains("Group") || role.contains("Window") || desc.contains("notification") {
+                print("   🔍 Found potential notification: \(role)")
+                processNotification(element: child)
+            }
+
+            // Recursively search children
+            searchForNotifications(in: child)
+        }
+    }
+
+    private var pollingTimer: Timer?
+
+    private func startPolling() {
+        // Poll every 5 seconds to catch notifications
+        pollingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.readExistingNotifications()
+            }
+        }
+        print("🔄 Started polling for notifications every 5 seconds")
     }
 
     // MARK: - Helper Functions
@@ -147,13 +230,19 @@ class NotificationCenterObserver: ObservableObject {
 
     fileprivate func processNotification(element: AXUIElement) {
         Task { @MainActor in
+            print("🔍 Processing notification element...")
+
             // Parse notification using NotificationParser
             guard let notificationData = await parser.parse(element: element) else {
+                print("⚠️ Failed to parse notification data")
                 return
             }
 
+            print("📋 Parsed notification - App: \(notificationData.appName), BundleID: \(notificationData.bundleID)")
+
             // Filter for supported apps only
             guard supportedBundleIDs.contains(notificationData.bundleID) else {
+                print("⏭️ Skipping notification from unsupported app: \(notificationData.bundleID)")
                 return
             }
 
@@ -182,7 +271,12 @@ private func axObserverCallback(
     notification: CFString,
     refcon: UnsafeMutableRawPointer?
 ) {
-    guard let refcon = refcon else { return }
+    print("🔔 AXObserver callback triggered! Notification: \(notification)")
+
+    guard let refcon = refcon else {
+        print("❌ No refcon in callback")
+        return
+    }
 
     let observerInstance = Unmanaged<NotificationCenterObserver>.fromOpaque(refcon).takeUnretainedValue()
 
